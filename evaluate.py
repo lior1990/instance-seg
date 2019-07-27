@@ -83,27 +83,32 @@ def visualize(input, label, features, name, id):
     :return: None. all the visualizations are saved locally
     '''
     # Save original image
-    os.makedirs('visualizations/' + name+'/segmentations', exist_ok=True)
+    os.path.join("visualizations", name, "segmentations")
+    os.makedirs(os.path.join("visualizations", name, "segmentations"), exist_ok=True)
     img_data = np.transpose(input, [1, 2, 0])
     max_val = np.amax(np.absolute(img_data))
     img_data = (img_data/max_val + 1) / 2  # normalize img
-    imsave('visualizations/'+name+'/segmentations/' + str(id) + 'img.jpg', img_data)
+    image_path = os.path.join("visualizations", name, "segmentations", str(id)+"img.jpg")
+    imsave(image_path, img_data)
 
     # Save ground truth
     if len(label.shape)==3:
         label = np.squeeze(label)
     label[np.where(label==255)] = 0
     label = label.astype(np.int32)
-    imsave('visualizations/'+name+'/segmentations/' + str(id) + 'gt.png', label)
+    gt_path = os.path.join("visualizations", name, "segmentations", str(id)+"gt.jpg")
+    imsave(gt_path, label)
 
     # reduce features dimensionality and predict label
     predicted_label = predict_label(features, downsample_factor=2)
-    imsave('visualizations/'+name+'/segmentations/' + str(id) + 'seg.png', predicted_label)
+    seg_path = os.path.join("visualizations", name, "segmentations", str(id)+"seg.jpg")
+    imsave(seg_path, predicted_label)
 
     # draw predicted seg on img and save
     plt.imshow(img_data)
     plt.imshow(predicted_label, alpha=0.5)
-    plt.savefig('visualizations/'+name+'/segmentations/' + str(id) + 'vis.png')
+    vis_path = os.path.join("visualizations", name, "segmentations", str(id)+"vis.jpg")
+    plt.savefig(vis_path)
     plt.close()
 
     return

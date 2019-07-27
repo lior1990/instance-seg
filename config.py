@@ -11,7 +11,7 @@ max_epoch_num = 100
 context = True
 
 # Checkpoints and logs directory - make sure to set local paths
-chkpts_dir = '/model_checkpoints/'
+chkpts_dir = 'model_checkpoints'
 
 if torch.cuda.is_available():
     float_type = torch.cuda.FloatTensor
@@ -28,13 +28,14 @@ else:
 def config_experiment(name, resume=True, context=context):
 
     exp = {}
-    os.makedirs(chkpts_dir+name, exist_ok=True)
+    os.makedirs(os.path.join(chkpts_dir, name), exist_ok=True)
     logger = config_logger(name)
 
     if resume:
 
         try:
-            exp = torch.load(chkpts_dir+name+'/chkpt.pth',map_location=lambda storage, loc: storage)
+            exp_path = os.path.join(chkpts_dir, name, "chkpt.pth")
+            exp = torch.load(exp_path, map_location=lambda storage, loc: storage)
             logger.info("loading checkpoint, experiment: " + name)
             return exp, logger
         except Exception as e:
@@ -52,9 +53,11 @@ def config_experiment(name, resume=True, context=context):
 
 
 def save_experiment(exp, name, isBest=False):
-    torch.save(exp,chkpts_dir+name+'/chkpt.pth')
+    exp_path = os.path.join(chkpts_dir, name, "chkpt.pth")
+    torch.save(exp, exp_path)
     if isBest:
-        torch.save(exp, chkpts_dir + name + '/best.pth')
+        best_exp_path = os.path.join(chkpts_dir, name, "best.pth")
+        torch.save(exp, best_exp_path)
 
 
 def config_logger(current_exp):
@@ -62,7 +65,7 @@ def config_logger(current_exp):
     logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler()
     handler.setLevel(logging.DEBUG)
-    handler2 = logging.FileHandler(chkpts_dir+current_exp+'/log')
+    handler2 = logging.FileHandler(os.path.join(chkpts_dir, current_exp, 'log'))
     handler2.setLevel(logging.INFO)
     formatter = logging.Formatter(
             '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')

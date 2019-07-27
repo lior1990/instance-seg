@@ -5,15 +5,24 @@ from loss import CostumeLoss
 from evaluate import *
 from config import *
 
+import os
+
+# os.chdir("/content/drive/My Drive/semantic-instance-segmentation-pytorch")
 
 # Experiment name
-current_experiment = 'test_05'
+current_experiment = 'second_test'
 
 # Paths to data, labels
-data_path = "/data/VOCdevkit/VOC2012/JPEGImages/"
-labels_path = "/data/VOCdevkit/VOC2012/SegmentationObject/"
-train_ids_path = "/data/VOCdevkit/VOC2012/ImageSets/Segmentation/train.txt"
-val_ids_path = "/data/VOCdevkit/VOC2012/ImageSets/Segmentation/val.txt"
+
+data_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\JPEGImages\\"
+labels_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\SegmentationObject\\"
+train_ids_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\ImageSets\\Segmentation\\train.txt"
+val_ids_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\ImageSets\\Segmentation\\val.txt"
+
+# data_path = "/content/drive/My Drive/VOCdevkit/VOC2012/JPEGImages/"
+# labels_path = "/content/drive/My Drive/VOCdevkit/VOC2012/SegmentationObject/"
+# train_ids_path = "/content/drive/My Drive/VOCdevkit/VOC2012/ImageSets/Segmentation/train.txt"
+# val_ids_path = "/content/drive/My Drive/VOCdevkit/VOC2012/ImageSets/Segmentation/val.txt"
 
 
 def run():

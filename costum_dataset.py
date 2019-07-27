@@ -1,3 +1,5 @@
+import os
+
 from torch.utils.data import Dataset
 import PIL.Image as im
 import numpy as np
@@ -32,8 +34,8 @@ class CostumeDataset(Dataset):
 
     def __getitem__(self, item):
         id = self.ids[item]
-        img = im.open(self.data_path+id+'.jpg')
-        label = im.open(self.labels_path+id+'.png')
+        img = im.open(os.path.join(self.data_path, id+'.jpg'))
+        label = im.open(os.path.join(self.labels_path, id+'.png'))
 
         size = label.size
 

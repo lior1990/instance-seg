@@ -2,10 +2,10 @@
 
 
 pycocotools
-torch 0.4.0
+torch
 torchvision
 numpy
-scipy
+scipy==1.1.0
 matplotlib
 hdbscan
 scikit-image
