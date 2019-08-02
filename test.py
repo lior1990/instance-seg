@@ -7,8 +7,10 @@ from costum_dataset import CostumeDataset
 from evaluate import visualize
 from model import FeatureExtractor
 
+experiment_name = "pretrained-02"
+
 # load the model
-exp_path = os.path.join(chkpts_dir, "first_test", "best.pth")
+exp_path = os.path.join(chkpts_dir, experiment_name, "best.pth")
 experiment = torch.load(exp_path, map_location=lambda storage, loc: storage)
 feature_extractor = FeatureExtractor(embedding_dim, context=context)
 feature_extractor.load_state_dict(experiment['fe_state_dict'])
@@ -30,7 +32,7 @@ for i, batch in enumerate(test_dataloader):
     labels = batch['label'].cpu().numpy()
     batch_features = feature_extractor(inputs)
     for input, label, features in zip(inputs, labels, batch_features):
-        visualize(input.numpy(), label, features.detach().numpy(), "first_test", i)
+        visualize(input.numpy(), label, features.detach().numpy(), experiment_name, i)
 
 
 if __name__ == '__main__':

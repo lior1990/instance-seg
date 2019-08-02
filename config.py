@@ -28,7 +28,10 @@ else:
 def config_experiment(name, resume=True, context=context):
 
     exp = {}
-    os.makedirs(os.path.join(chkpts_dir, name), exist_ok=True)
+    try:
+        os.makedirs(os.path.join(chkpts_dir, name))
+    except:
+        pass
     logger = config_logger(name)
 
     if resume:
