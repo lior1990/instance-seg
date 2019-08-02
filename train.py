@@ -1,3 +1,4 @@
+import argparse
 import torch.autograd
 from costum_dataset import *
 from torch.utils.data import DataLoader
@@ -7,25 +8,8 @@ from config import *
 
 import os
 
-# os.chdir("/content/drive/My Drive/semantic-instance-segmentation-pytorch")
 
-# Experiment name
-current_experiment = 'second_test'
-
-# Paths to data, labels
-
-data_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\JPEGImages\\"
-labels_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\SegmentationObject\\"
-train_ids_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\ImageSets\\Segmentation\\train.txt"
-val_ids_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\ImageSets\\Segmentation\\val.txt"
-
-# data_path = "/content/drive/My Drive/VOCdevkit/VOC2012/JPEGImages/"
-# labels_path = "/content/drive/My Drive/VOCdevkit/VOC2012/SegmentationObject/"
-# train_ids_path = "/content/drive/My Drive/VOCdevkit/VOC2012/ImageSets/Segmentation/train.txt"
-# val_ids_path = "/content/drive/My Drive/VOCdevkit/VOC2012/ImageSets/Segmentation/val.txt"
-
-
-def run():
+def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path):
     # Dataloader
     train_dataset = CostumeDataset(train_ids_path, data_path, labels_path, img_h=224, img_w=224)
     train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
@@ -122,5 +106,28 @@ def adjust_learning_rate(optimizer, epoch, lr, decay_rate):
         param_group['lr'] = lr*np.power(decay_rate, epoch)
 
 
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--current_experiment', help='Experiment name', required=True)
+    parser.add_argument('--data_folder_path', required=True)
+    parser.add_argument('--labels_folder_path', required=True)
+    parser.add_argument('--train_ids_file_path', required=True)
+    parser.add_argument('--val_ids_file_path', required=True)
+
+    args = parser.parse_args()
+    current_experiment = args.current_experiment
+    data_path = args.data_folder_path
+    labels_path = args.labels_folder_path
+    train_ids_path = args.train_ids_file_path
+    val_ids_path = args.val_ids_file_path
+
+    # data_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\JPEGImages\\"
+    # labels_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\SegmentationObject\\"
+    # train_ids_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\ImageSets\\Segmentation\\train.txt"
+    # val_ids_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\ImageSets\\Segmentation\\val.txt"
+
+    run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path)
+
+
 if __name__=='__main__':
-    run()
+    main()
