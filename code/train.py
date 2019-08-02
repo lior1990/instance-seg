@@ -88,16 +88,20 @@ def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path
         # Plot and save loss history
         plt.plot(train_fe_loss_history, 'r')
         plt.plot(val_fe_loss_history, 'b')
-        try:
-            os.makedirs(os.path.join('visualizations', current_experiment))
-        except:
-            pass
-        plt.savefig(os.path.join('visualizations', current_experiment, 'fe_loss.png'))
+	try:
+            os.makedirs('visualizations/' + current_experiment)
+	except:
+	    pass
+        plt.savefig('visualizations/' + current_experiment + '/fe_loss.png')
         plt.close()
 
         # Plot and save loss history
         plt.plot(dice_history, 'r')
-        plt.savefig(os.path.join('visualizations', current_experiment, 'dice.png'))
+	try:
+            os.makedirs('visualizations/' + current_experiment)
+	except:
+	    pass
+        plt.savefig('visualizations/' + current_experiment + '/dice.png')
         plt.close()
 
     return

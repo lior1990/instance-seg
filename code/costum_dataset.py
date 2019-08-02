@@ -34,14 +34,18 @@ class CostumeDataset(Dataset):
 
     def __getitem__(self, item):
         id = self.ids[item]
-        img = im.open(os.path.join(self.data_path, id+'.jpg'))
-        label = im.open(os.path.join(self.labels_path, id+'.png'))
+	try:
+	    # voc
+            img = im.open(os.path.join(self.data_path, id+'.jpg'))
+            label = im.open(os.path.join(self.labels_path, id+'.png'))
+	except: 
+	    # coco
+            img = im.open(os.path.join(self.data_path, str(id).zfill(12) + ".jpg")).convert('RGB')
+            label = im.open(os.path.join(self.labels_path, str(id) + ".png"))
 
         size = label.size
-
-        img, label = resize_sample(img, label, self.h, self.w)
+	img, label = resize_sample(img, label, self.h, self.w)
         label = np.asarray(label)
-
         img = self.toTensor(img)
         img = self.normalize(img)
         return {'image':img, 'label':label, 'size':size}
