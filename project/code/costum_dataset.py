@@ -16,6 +16,7 @@ class CostumeDataset(Dataset):
                         .png images, containing instance segmentations.
     :param img_h, img_w - images are rescaled and cropped to this size.
     '''
+
     def __init__(self, ids_file_path, data_path, labels_path, img_h=224, img_w=224):
         ids_file = open(ids_file_path)
         self.ids = ids_file.read().split("\n")[:-1]
@@ -26,7 +27,7 @@ class CostumeDataset(Dataset):
         self.w = img_w
 
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                         std=[0.229, 0.224, 0.225])
+                                              std=[0.229, 0.224, 0.225])
         self.toTensor = transforms.ToTensor()
 
     def __len__(self):
@@ -34,17 +35,21 @@ class CostumeDataset(Dataset):
 
     def __getitem__(self, item):
         id = self.ids[item]
-        img = im.open(os.path.join(self.data_path, id+'.jpg'))
-        label = im.open(os.path.join(self.labels_path, id+'.png'))
+        try:
+            # voc
+            img = im.open(os.path.join(self.data_path, id + '.jpg'))
+            label = im.open(os.path.join(self.labels_path, id + '.png'))
+        except:
+            # coco
+            img = im.open(os.path.join(self.data_path, str(id).zfill(12) + ".jpg")).convert('RGB')
+            label = im.open(os.path.join(self.labels_path, str(id) + ".png"))
 
         size = label.size
-
         img, label = resize_sample(img, label, self.h, self.w)
         label = np.asarray(label)
-
         img = self.toTensor(img)
         img = self.normalize(img)
-        return {'image':img, 'label':label, 'size':size}
+        return {'image': img, 'label': label, 'size': size}
 
 
 def resize_sample(img, label, h, w, restore=False, evaluate=False):
@@ -62,7 +67,7 @@ def resize_sample(img, label, h, w, restore=False, evaluate=False):
                         if False, images are rescaled on the short side and cropped.
     :return: the resized image, label
     '''
-    center_crop = transforms.CenterCrop([h,w])
+    center_crop = transforms.CenterCrop([h, w])
 
     old_size = img.size  # old_size is in (width, height) format
     w_ratio = float(w) / old_size[0]
@@ -80,5 +85,3 @@ def resize_sample(img, label, h, w, restore=False, evaluate=False):
     label = center_crop(label)
 
     return img, label
-
-

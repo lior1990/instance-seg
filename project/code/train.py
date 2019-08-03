@@ -30,7 +30,7 @@ def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path
     dice_history = experiment['dice_history']
 
     fe_loss_fn = CostumeLoss()
-    fe_opt = torch.optim.Adam(filter(lambda p:p.requires_grad, fe.parameters()), learning_rate)
+    fe_opt = torch.optim.Adam(filter(lambda p: p.requires_grad, fe.parameters()), learning_rate)
 
     exp_logger.info('training started/resumed at epoch ' + str(current_epoch))
 
@@ -57,8 +57,7 @@ def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path
             exp_logger.info('epoch: ' + str(i) + ', batch number: ' + str(batch_num) +
                             ', loss: ' + "{0:.2f}".format(np_fe_loss))
 
-
-        train_fe_loss = running_fe_loss/(batch_num+1)
+        train_fe_loss = running_fe_loss / (batch_num + 1)
 
         # Evaluate model
         fe.eval()
@@ -89,15 +88,19 @@ def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path
         plt.plot(train_fe_loss_history, 'r')
         plt.plot(val_fe_loss_history, 'b')
         try:
-            os.makedirs(os.path.join('visualizations', current_experiment))
+            os.makedirs('visualizations/' + current_experiment)
         except:
             pass
-        plt.savefig(os.path.join('visualizations', current_experiment, 'fe_loss.png'))
+        plt.savefig('visualizations/' + current_experiment + '/fe_loss.png')
         plt.close()
 
         # Plot and save loss history
         plt.plot(dice_history, 'r')
-        plt.savefig(os.path.join('visualizations', current_experiment, 'dice.png'))
+        try:
+            os.makedirs('visualizations/' + current_experiment)
+        except:
+            pass
+        plt.savefig('visualizations/' + current_experiment + '/dice.png')
         plt.close()
 
     return
@@ -105,7 +108,7 @@ def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path
 
 def adjust_learning_rate(optimizer, epoch, lr, decay_rate):
     for param_group in optimizer.param_groups:
-        param_group['lr'] = lr*np.power(decay_rate, epoch)
+        param_group['lr'] = lr * np.power(decay_rate, epoch)
 
 
 def main():
@@ -131,5 +134,5 @@ def main():
     run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()

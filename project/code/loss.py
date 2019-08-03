@@ -82,7 +82,7 @@ def contrasive_loss(features, label):
             break
         for j in range(i+1, num_clusters):
             dist = torch.norm(means[i]-means[j])
-            if dist.cpu().data[0]<dd*2:
+            if dist.cpu().data.item()<dd*2:
                 dist_loss += torch.pow(2*dd - dist,2)/(num_clusters-1)
 
     # regularization term
