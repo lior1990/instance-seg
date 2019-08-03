@@ -3,3 +3,8 @@
 *.jpg
 *.jpeg
 *log
+*.xml
+*.npz
+project/venv/
+*.json
+*.pyc
