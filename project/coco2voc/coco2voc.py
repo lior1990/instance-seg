@@ -8,6 +8,8 @@ import os
 import time
 import numpy as np
 
+COCO_FILE_NAME_LENGTH = 12
+
 
 def coco2voc(anns_file, target_folder, n=None, compress=True):
     '''
@@ -39,34 +41,42 @@ def coco2voc(anns_file, target_folder, n=None, compress=True):
     os.makedirs(id_target_path)
 
     image_id_list = open(os.path.join(target_folder, 'images_ids.txt'), 'a+')
+    missingAnns = 0
+    goodAnns = 0
     start = time.time()
 
     for i, img in enumerate(coco_imgs):
 
         anns_ids = coco_instance.getAnnIds(img)
+        imgName = str(img).zfill(COCO_FILE_NAME_LENGTH)
         anns = coco_instance.loadAnns(anns_ids)
         if not anns:
+            missingAnns += 1
             continue
-
+        goodAnns += 1
         class_seg, instance_seg, id_seg = annsToSeg(anns, coco_instance)
 
-        Image.fromarray(class_seg).convert("L").save(class_target_path + '/' + str(img) + '.png')
-        Image.fromarray(instance_seg).convert("L").save(instance_target_path + '/' + str(img) + '.png')
-        
+        Image.fromarray(class_seg).convert("L").save(
+            class_target_path + '/' + imgName + '.png')
+        Image.fromarray(instance_seg).convert("L").save(
+            instance_target_path + '/' + imgName + '.png')
+
         if compress:
-            np.savez_compressed(os.path.join(id_target_path, str(img)), id_seg)
+            np.savez_compressed(os.path.join(id_target_path, imgName), id_seg)
         else:
-            np.save(os.path.join(id_target_path, str(img)+'.npy'), id_seg)
+            np.save(os.path.join(id_target_path, imgName + '.npy'), id_seg)
 
-        image_id_list.write(str(img)+'\n')
+        image_id_list.write(imgName + '\n')
 
-        if i%100==0 and i>0:
-            print(str(i)+" annotations processed" +
-                  " in "+str(int(time.time()-start)) + " seconds")
-        if i>=n:
+        if i % 100 == 0 and i > 0:
+            print(str(i) + " annotations processed" +
+                  " in " + str(int(time.time() - start)) + " seconds")
+        if i >= n:
             break
 
     image_id_list.close()
+    print('Created',goodAnns,'label images')
+    print('Couldnt create',missingAnns,'label images, because annotations were missing')
     return
 
 
