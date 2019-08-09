@@ -10,3 +10,4 @@ project/venv/
 *.pyc
 
 
+project/.idea/*
