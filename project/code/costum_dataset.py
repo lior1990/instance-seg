@@ -35,14 +35,8 @@ class CostumeDataset(Dataset):
 
     def __getitem__(self, item):
         id = self.ids[item]
-        try:
-            # voc
-            img = im.open(os.path.join(self.data_path, id + '.jpg'))
-            label = im.open(os.path.join(self.labels_path, id + '.png'))
-        except:
-            # coco
-            img = im.open(os.path.join(self.data_path, str(id).zfill(12) + ".jpg")).convert('RGB')
-            label = im.open(os.path.join(self.labels_path, str(id) + ".png"))
+        img = im.open(os.path.join(self.data_path, id + '.jpg')).convert('RGB')
+        label = im.open(os.path.join(self.labels_path, id + '.png'))
 
         size = label.size
         img, label = resize_sample(img, label, self.h, self.w)
