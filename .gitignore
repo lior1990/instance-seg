@@ -8,3 +8,7 @@
 project/venv/
 *.json
 *.pyc
+*.txt
+COCO/*
+VOC/*
+
