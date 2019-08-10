@@ -3,12 +3,15 @@ import os
 from model import *
 
 # Hyper parameters
+# embedding_dim = 32
 embedding_dim = 32
 batch_size = 32
+# learning_rate = 0.0003
 learning_rate = 0.0003
 lr_decay = 0.98
-max_epoch_num = 100
-context = True
+max_epoch_num = 100000
+# context = True
+context = False
 
 # Checkpoints and logs directory - make sure to set local paths
 chkpts_dir = 'model_checkpoints'

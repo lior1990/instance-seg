@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from loss import CostumeLoss
 from evaluate import *
 from config import *
+from datetime import datetime
 
 import os
 
@@ -15,7 +16,7 @@ def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path
     train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
 
     val_dataset = CostumeDataset(val_ids_path, data_path, labels_path, img_h=224, img_w=224)
-    val_dataloader = DataLoader(val_dataset)
+    val_dataloader = DataLoader(val_dataset,batch_size)
 
     # Set up an experiment
     experiment, exp_logger = config_experiment(current_experiment, resume=True, context=context)
@@ -60,8 +61,9 @@ def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path
         train_fe_loss = running_fe_loss / (batch_num + 1)
 
         # Evaluate model
-        fe.eval()
-        val_fe_loss, avg_dice = evaluate_model(fe, val_dataloader, fe_loss_fn)
+        with torch.no_grad():
+            fe.eval()
+            val_fe_loss, avg_dice = evaluate_model(fe, val_dataloader, fe_loss_fn)
         fe.train()
 
         if best_dice is None or avg_dice > best_dice:
@@ -112,26 +114,37 @@ def adjust_learning_rate(optimizer, epoch, lr, decay_rate):
 
 
 def main():
+
+    defaultExperimentName = 'exp_' + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    defaultTrainDataPath = os.path.join('..', '..', 'COCO', 'train2017', '')
+    defaultTrainLabelsPath = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
+    defaultValDataPath = os.path.join('..', '..', 'COCO', 'val2017', '')
+    defaultValLabelsPath = os.path.join('..', '..', 'COCO', 'val2017labels', 'instance_labels', '')
+    defaultTrainIdsFile = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
+    defaultValIdsFile = os.path.join('..', '..', 'COCO', 'val2017labels', 'images_ids.txt')
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('--current_experiment', help='Experiment name', required=True)
-    parser.add_argument('--data_folder_path', required=True)
-    parser.add_argument('--labels_folder_path', required=True)
-    parser.add_argument('--train_ids_file_path', required=True)
-    parser.add_argument('--val_ids_file_path', required=True)
+    parser.add_argument('--current_experiment', help='Experiment name', required=False, default=defaultExperimentName)
+    parser.add_argument('--train_data_folder_path', required=False, default=defaultTrainDataPath)
+    parser.add_argument('--train_labels_folder_path', required=False, default=defaultTrainLabelsPath)
+    parser.add_argument('--validation_data_folder_path', required=False, default=defaultValDataPath)
+    parser.add_argument('--validation_labels_folder_path', required=False, default=defaultValLabelsPath)
+    parser.add_argument('--train_ids_file_path', required=False, default=defaultTrainIdsFile)
+    parser.add_argument('--val_ids_file_path', required=False, default=defaultValIdsFile)
 
     args = parser.parse_args()
     current_experiment = args.current_experiment
-    data_path = args.data_folder_path
-    labels_path = args.labels_folder_path
-    train_ids_path = args.train_ids_file_path
-    val_ids_path = args.val_ids_file_path
+    trainDataPath = args.train_data_folder_path
+    trainLabelsPath = args.train_labels_folder_path
+    valDataPath = args.validation_data_folder_path
+    valLabelsPath = args.validation_labels_folder_path
+    trainIdsPath = args.train_ids_file_path
+    valIdsPath = args.val_ids_file_path
 
-    # data_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\JPEGImages\\"
-    # labels_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\SegmentationObject\\"
-    # train_ids_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\ImageSets\\Segmentation\\train.txt"
-    # val_ids_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\ImageSets\\Segmentation\\val.txt"
+    current_experiment = 'exp2'
+    trainIdsPath=valIdsPath=os.path.join('..', '..', 'COCO', 'overfit.txt')
 
-    run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path)
+    run(current_experiment, trainDataPath, trainLabelsPath, trainIdsPath, valIdsPath)
 
 
 if __name__ == '__main__':

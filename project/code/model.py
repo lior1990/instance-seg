@@ -2,8 +2,6 @@ from torchvision import models
 import torch
 import torch.nn as nn
 
-
-
 class FeatureExtractor(nn.Module):
     '''
     The main modules architecture. Based on a resnet34 backbone with Nearest neighbour upsampling
