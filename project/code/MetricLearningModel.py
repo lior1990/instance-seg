@@ -19,6 +19,7 @@ class FeatureExtractor(nn.Module):
         self.resnet = models.resnet101(True)  # can be resnet34 or 50
         for param in self.resnet.parameters():   # Freeze resnet layers
             param.requires_grad = False
+
         self.upsample1 = UpsamplingBlock(2048, 1024, skip=True)
         self.upsample2 = UpsamplingBlock(1024, 512, skip=True)
         self.upsample3 = UpsamplingBlock(512, 256, skip=True)
