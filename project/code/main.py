@@ -51,6 +51,14 @@ def main():
         val_data_folder_path = train_data_folder_path
         val_labels_folder_path = train_labels_folder_path
 
+
+    print('experiment:',current_experiment)
+    print('train data folder path:',train_data_folder_path)
+    print('train labels folder path:',train_labels_folder_path)
+    print('train ids path:',train_ids_path)
+    print('train data folder path:',val_data_folder_path)
+    print('train labels folder path:',val_labels_folder_path)
+    print('val ids path:',val_ids_path)
     _train(current_experiment, train_data_folder_path, train_labels_folder_path, train_ids_path,
            val_data_folder_path, val_labels_folder_path, val_ids_path)
 

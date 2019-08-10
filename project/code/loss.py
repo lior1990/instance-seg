@@ -1,10 +1,9 @@
 import numpy as np
 from torch.autograd import Variable
 from config import *
-from typing import List
 
 
-def calcLoss(featuresBatch: torch.Tensor, labelsBatch: np.ndarray):
+def calcLoss(featuresBatch, labelsBatch):
     totalLoss = Variable(torch.Tensor([0]).type(double_type))
     batchSize = featuresBatch.shape[0]
     for sample in range(batchSize):
@@ -16,7 +15,7 @@ def calcLoss(featuresBatch: torch.Tensor, labelsBatch: np.ndarray):
     return totalLoss
 
 
-def getVarLoss(clusterMeans: torch.Tensor, clusters: List[torch.Tensor]):
+def getVarLoss(clusterMeans, clusters):
     """
     This function returns the inter-cluster variation loss
     The loss is minimized by clustering all the embeddings of the same instance together, up to some dv parameter
@@ -27,7 +26,7 @@ def getVarLoss(clusterMeans: torch.Tensor, clusters: List[torch.Tensor]):
     :return:
     The total variation loss of this image clusters
     """
-    N = len(clusters) # number of clusters
+    N = len(clusters)  # number of clusters
     varLoss = Variable(torch.Tensor([0])).type(double_type)
     for c in range(N):
         mean = clusterMeans[c]
@@ -43,7 +42,7 @@ def getVarLoss(clusterMeans: torch.Tensor, clusters: List[torch.Tensor]):
     return varLoss
 
 
-def getDistLoss(clusterMeans:torch.Tensor):
+def getDistLoss(clusterMeans):
     """
     This function returns the distance loss between different clusters, up to some dd parameter.
     :param clusterMeans: the means of all clusters in the embedding space. shape is (N,C) where N is the number of
@@ -53,30 +52,31 @@ def getDistLoss(clusterMeans:torch.Tensor):
     """
     N = clusterMeans.shape[0]
     distLoss = Variable(torch.Tensor([0])).type(double_type)
-    if N<2:
+    if N < 2:
         return distLoss
     for cA in range(N):
         clusterA = clusterMeans[cA]
-        for cB in range(cA+1,N):
+        for cB in range(cA + 1, N):
             clusterB = clusterMeans[cB]
-            distLoss = distLoss + torch.relu(2*lossParams.dd-torch.norm(clusterA-clusterB,p=lossParams.norm))**2
+            distLoss = distLoss + torch.relu(
+                2 * lossParams.dd - torch.norm(clusterA - clusterB, p=lossParams.norm)) ** 2
 
-    distLoss = distLoss/(N*(N-1))
+    distLoss = distLoss / (N * (N - 1))
     return distLoss
 
 
-def getRegularizationLoss(clusterMeans: torch.Tensor):
+def getRegularizationLoss(clusterMeans):
     """
     This function calculates the regularization loss. The regularization is on the cluster means
     :param clusterMeans: the means of all clusters in the embedding space. shape is (N,C) where N is the number of
     instances (including background), and C is the embedding space dimension
     :return: The total regularization loss calculated on the cluster means
     """
-    regLoss = torch.mean(torch.norm(clusterMeans,dim=1,p=lossParams.norm))
+    regLoss = torch.mean(torch.norm(clusterMeans, dim=1, p=lossParams.norm))
     return regLoss
 
 
-def getClusters(features: torch.Tensor, labels: np.ndarray):
+def getClusters(features, labels):
     """
     This function performs clustering on the input features according to the true labels
     :param features: an (C,h,w) Tensor as outputted from the feature extractor
