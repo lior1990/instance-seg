@@ -6,6 +6,8 @@ from loss import CostumeLoss
 from evaluate import *
 from config import *
 from datetime import datetime
+import MetricLearningModel
+
 
 import os
 
@@ -19,9 +21,11 @@ def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path
     val_dataloader = DataLoader(val_dataset,batch_size)
 
     # Set up an experiment
-    experiment, exp_logger = config_experiment(current_experiment, resume=True, context=context)
+    experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False)
 
-    fe = FeatureExtractor(embedding_dim, context=context)
+    # fe = FeatureExtractor(embedding_dim, context=context)
+    fe = MetricLearningModel.FeatureExtractor(embedding_dim)
+
 
     fe.load_state_dict(experiment['fe_state_dict'])
     current_epoch = experiment['epoch']

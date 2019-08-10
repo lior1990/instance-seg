@@ -1,10 +1,11 @@
 import logging
 import os
 from model import *
+import MetricLearningModel
 
 # Hyper parameters
 # embedding_dim = 32
-embedding_dim = 32
+embedding_dim = 64
 batch_size = 32
 # learning_rate = 0.0003
 learning_rate = 0.0003
@@ -28,7 +29,7 @@ else:
     long_type = torch.LongTensor
 
 
-def config_experiment(name, resume=True, context=context):
+def config_experiment(name, resume=True,useBest=False, context=context):
 
     exp = {}
     try:
@@ -40,14 +41,18 @@ def config_experiment(name, resume=True, context=context):
     if resume:
 
         try:
-            exp_path = os.path.join(chkpts_dir, name, "chkpt.pth")
+            if useBest:
+                exp_path = os.path.join(chkpts_dir,name,'best.pth')
+            else:
+                exp_path = os.path.join(chkpts_dir, name, "chkpt.pth")
             exp = torch.load(exp_path, map_location=lambda storage, loc: storage)
             logger.info("loading checkpoint, experiment: " + name)
             return exp, logger
         except Exception as e:
             logger.warning('checkpoint does not exist. creating new experiment')
 
-    fe = FeatureExtractor(embedding_dim, context=context)
+    # fe = FeatureExtractor(embedding_dim, context=context)
+    fe = MetricLearningModel.FeatureExtractor(embedding_dim)
     exp['fe_state_dict'] = fe.state_dict()
     exp['epoch'] = 0
     exp['best_dice'] = None
