@@ -1,6 +1,7 @@
 import torch.autograd
 from costum_dataset import *
 from torch.utils.data import DataLoader
+import torch.nn as nn
 from loss import calcLoss
 from evaluate import *
 from config import *

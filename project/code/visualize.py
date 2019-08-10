@@ -64,8 +64,6 @@ def main():
     labelsPath = args.labels_folder_path
     idsPath = args.ids_file_path
 
-    current_experiment = 'exp3'
-    idsPath = os.path.join('..', '..', 'COCO', 'overfit.txt')
 
     with torch.no_grad():
         run(current_experiment, dataPath, labelsPath, idsPath)

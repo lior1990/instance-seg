@@ -5,7 +5,7 @@ import torch
 
 # Hyper parameters
 embedding_dim = 64
-batch_size = 32
+batch_size = 64
 class LossParams:
     def __init__(self):
         self.alpha = 1

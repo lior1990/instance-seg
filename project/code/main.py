@@ -45,11 +45,6 @@ def main():
         # should be a number or a list of comma separated numbers
         os.environ["CUDA_VISIBLE_DEVICES"] = GPUs
 
-    val_data_folder_path = None
-    val_labels_folder_path = None
-    train_ids_path = os.path.join('..', '..', 'COCO', 'overfit.txt')
-    val_ids_path = os.path.join('..', '..', 'COCO', 'overfit.txt')
-    current_experiment = 'exp3'
 
     if not val_data_folder_path and not val_labels_folder_path:
         # use the same folder from the training arguments
