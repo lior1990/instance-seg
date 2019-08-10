@@ -30,7 +30,8 @@ def predict_label(features, downsample_factor=2, min_cluster=350):
     c = features.shape[2]
 
     flat_features = np.reshape(features, [h*w,c])
-    reduced_features = reduce(flat_features, 10)  # reduce dimension using PCA
+    # reduced_features = reduce(flat_features, 10)  # reduce dimension using PCA
+    reduced_features = flat_features  # reduce dimension using PCA
     cluster_mask = cluster_features(reduced_features, min_cluster) # cluster with hDBSCAN
     #cluster_mask = determine_background(flat_features, cluster_mask)
     predicted_label = np.reshape(cluster_mask, [h,w])
@@ -39,7 +40,7 @@ def predict_label(features, downsample_factor=2, min_cluster=350):
     return np.asarray(predicted_label, np.int32)
 
 
-def cluster_features(features, min_cluster=350):
+def cluster_features(features, min_cluster=10):
     '''
     this function takes a (h*w,c) numpy array, and clusters the c-dim points using MeanShift/DBSCAN.
     this function is meant to use for visualization and evaluation only.  Meanshift is much slower

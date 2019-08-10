@@ -5,7 +5,7 @@ from typing import List
 
 
 def calcLoss(featuresBatch: torch.Tensor, labelsBatch: np.ndarray):
-    totalLoss = Variable(torch.Tensor([0]).type(float_type))
+    totalLoss = Variable(torch.Tensor([0]).type(double_type))
     batchSize = featuresBatch.shape[0]
     for sample in range(batchSize):
         clusterMeans, clusters = getClusters(featuresBatch[sample], labelsBatch[sample])
@@ -28,7 +28,7 @@ def getVarLoss(clusterMeans: torch.Tensor, clusters: List[torch.Tensor]):
     The total variation loss of this image clusters
     """
     N = len(clusters) # number of clusters
-    varLoss = Variable(torch.Tensor([0])).type(float_type)
+    varLoss = Variable(torch.Tensor([0])).type(double_type)
     for c in range(N):
         mean = clusterMeans[c]
         cluster = clusters[c]
@@ -52,7 +52,7 @@ def getDistLoss(clusterMeans:torch.Tensor):
     the total distance loss
     """
     N = clusterMeans.shape[0]
-    distLoss = Variable(torch.Tensor([0])).type(float_type)
+    distLoss = Variable(torch.Tensor([0])).type(double_type)
     if N<2:
         return distLoss
     for cA in range(N):
