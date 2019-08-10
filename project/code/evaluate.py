@@ -11,8 +11,6 @@ from skimage.transform import rescale
 from config import *
 
 
-
-
 def predict_label(features, downsample_factor=2, min_cluster=350):
     '''
     predicts a segmentation mask from the network output. Uses PCA to reduce dimesionality
@@ -150,6 +148,7 @@ def dice_score(x, y):
     return total_score/len(x_instances)
 
 
+@torch.no_grad()
 def evaluate_model(model, dataloader, loss_fn):
     '''
     evaluates average loss of a model on a given loss function, and average dice distance of

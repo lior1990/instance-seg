@@ -4,10 +4,12 @@ from model import *
 import MetricLearningModel
 
 # Hyper parameters
-# embedding_dim = 32
 embedding_dim = 64
 batch_size = 32
-# learning_rate = 0.0003
+
+if torch.cuda.is_available() and torch.cuda.device_count() > 1:
+    batch_size = batch_size * torch.cuda.device_count()
+
 learning_rate = 0.0003
 lr_decay = 0.98
 max_epoch_num = 100000
