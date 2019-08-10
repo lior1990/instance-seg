@@ -1,7 +1,7 @@
 import torch.autograd
 from costum_dataset import *
 from torch.utils.data import DataLoader
-from loss import CostumeLoss
+from loss import calcLoss
 from evaluate import *
 from config import *
 from datetime import datetime
@@ -23,7 +23,6 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
     # Set up an experiment
     experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False)
 
-    # fe = FeatureExtractor(embedding_dim, context=context)
     fe = MetricLearningModel.FeatureExtractor(embedding_dim)
 
 
@@ -34,7 +33,6 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
     val_fe_loss_history = experiment['val_fe_loss']
     dice_history = experiment['dice_history']
 
-    fe_loss_fn = CostumeLoss()
 
     exp_logger.info('training started/resumed at epoch ' + str(current_epoch))
 
@@ -59,12 +57,11 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
             labels = batch['label'].cpu().numpy()
             features = fe(inputs)
             fe_opt.zero_grad()
-            fe_loss = fe_loss_fn(features, labels)
-            fe_loss.backward()
-
+            totalLoss = calcLoss(features,labels)
+            totalLoss.backward()
             fe_opt.step()
 
-            np_fe_loss = fe_loss.cpu().data[0]
+            np_fe_loss = totalLoss.cpu().data[0]
 
             running_fe_loss += np_fe_loss
             exp_logger.info('epoch: ' + str(i) + ', batch number: ' + str(batch_num) +
@@ -75,7 +72,7 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
         # Evaluate model
         with torch.no_grad():
             fe.eval()
-            val_fe_loss, avg_dice = evaluate_model(fe, val_dataloader, fe_loss_fn)
+            val_fe_loss, avg_dice = evaluate_model(fe, val_dataloader, calcLoss)
         fe.train()
 
         if best_dice is None or avg_dice > best_dice:
