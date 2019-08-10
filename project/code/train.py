@@ -1,4 +1,3 @@
-import argparse
 import torch.autograd
 from costum_dataset import *
 from torch.utils.data import DataLoader
@@ -9,12 +8,13 @@ from config import *
 import os
 
 
-def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path):
+def run(current_experiment, train_data_folder_path, train_labels_folder_path, train_ids_path,
+        val_data_folder_path, val_labels_folder_path, val_ids_path):
     # Dataloader
-    train_dataset = CostumeDataset(train_ids_path, data_path, labels_path, img_h=224, img_w=224)
+    train_dataset = CostumeDataset(train_ids_path, train_data_folder_path, train_labels_folder_path, img_h=224, img_w=224)
     train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
 
-    val_dataset = CostumeDataset(val_ids_path, data_path, labels_path, img_h=224, img_w=224)
+    val_dataset = CostumeDataset(val_ids_path, val_data_folder_path, val_labels_folder_path, img_h=224, img_w=224)
     val_dataloader = DataLoader(val_dataset)
 
     # Set up an experiment
@@ -30,13 +30,21 @@ def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path
     dice_history = experiment['dice_history']
 
     fe_loss_fn = CostumeLoss()
-    fe_opt = torch.optim.Adam(filter(lambda p: p.requires_grad, fe.parameters()), learning_rate)
 
     exp_logger.info('training started/resumed at epoch ' + str(current_epoch))
 
     if torch.cuda.is_available():
         print("Using CUDA")
-        fe.cuda()
+        device = torch.device("cuda:0")
+        if torch.cuda.device_count() > 1:
+            print("Using CUDA with %s GPUs!" % torch.cuda.device_count())
+            fe = nn.DataParallel(fe)
+    else:
+        device = torch.device("cpu")
+
+    fe.to(device)
+
+    fe_opt = torch.optim.Adam(filter(lambda p: p.requires_grad, fe.parameters()), learning_rate)
 
     for i in range(current_epoch, max_epoch_num):
         adjust_learning_rate(fe_opt, i, learning_rate, lr_decay)
@@ -88,19 +96,19 @@ def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path
         plt.plot(train_fe_loss_history, 'r')
         plt.plot(val_fe_loss_history, 'b')
         try:
-            os.makedirs('visualizations/' + current_experiment)
+            os.makedirs(os.path.join('visualizations', current_experiment))
         except:
             pass
-        plt.savefig('visualizations/' + current_experiment + '/fe_loss.png')
+        plt.savefig(os.path.join('visualizations', current_experiment, 'fe_loss.png'))
         plt.close()
 
         # Plot and save loss history
         plt.plot(dice_history, 'r')
         try:
-            os.makedirs('visualizations/' + current_experiment)
+            os.makedirs(os.path.join('visualizations', current_experiment))
         except:
             pass
-        plt.savefig('visualizations/' + current_experiment + '/dice.png')
+        plt.savefig(os.path.join('visualizations', current_experiment, 'dice.png'))
         plt.close()
 
     return
@@ -109,30 +117,3 @@ def run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path
 def adjust_learning_rate(optimizer, epoch, lr, decay_rate):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr * np.power(decay_rate, epoch)
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--current_experiment', help='Experiment name', required=True)
-    parser.add_argument('--data_folder_path', required=True)
-    parser.add_argument('--labels_folder_path', required=True)
-    parser.add_argument('--train_ids_file_path', required=True)
-    parser.add_argument('--val_ids_file_path', required=True)
-
-    args = parser.parse_args()
-    current_experiment = args.current_experiment
-    data_path = args.data_folder_path
-    labels_path = args.labels_folder_path
-    train_ids_path = args.train_ids_file_path
-    val_ids_path = args.val_ids_file_path
-
-    # data_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\JPEGImages\\"
-    # labels_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\SegmentationObject\\"
-    # train_ids_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\ImageSets\\Segmentation\\train.txt"
-    # val_ids_path = "C:\\Users\\Lior\\Downloads\\VOCdevkit\\VOC2012\\ImageSets\\Segmentation\\val.txt"
-
-    run(current_experiment, data_path, labels_path, train_ids_path, val_ids_path)
-
-
-if __name__ == '__main__':
-    main()
