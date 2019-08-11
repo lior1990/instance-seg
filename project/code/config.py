@@ -4,7 +4,7 @@ import MetricLearningModel
 import torch
 
 # Hyper parameters
-embedding_dim = 64
+embedding_dim = 32
 batch_size = 64
 class LossParams:
     def __init__(self):
