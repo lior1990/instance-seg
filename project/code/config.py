@@ -52,7 +52,7 @@ def config_experiment(name, resume=True, useBest=False):
             if useBest:
                 exp_path = os.path.join(chkpts_dir, name, 'best.pth')
             else:
-                exp_path = os.path.join(chkpts_dir, name, "chkpt.pth")
+                exp_path = os.path.join(chkpts_dir, name, "latest.pth")
             exp = torch.load(exp_path, map_location=lambda storage, loc: storage)
             logger.info("loading checkpoint, experiment: " + name)
             return exp, logger
@@ -61,18 +61,21 @@ def config_experiment(name, resume=True, useBest=False):
 
     # fe = FeatureExtractor(embedding_dim, context=context)
     fe = MetricLearningModel.FeatureExtractor(embedding_dim)
-    exp['fe_state_dict'] = fe.state_dict()
     exp['epoch'] = 0
-    exp['best_dice'] = None
+    exp['fe_state_dict'] = fe.state_dict()
     exp['train_fe_loss'] = []
-    exp['val_fe_loss'] = []
-    exp['dice_history'] = []
+    # exp['best_dice'] = None
+    # exp['val_fe_loss'] = []
+    # exp['dice_history'] = []
 
     return exp, logger
 
 
 def save_experiment(exp, name, isBest=False):
-    exp_path = os.path.join(chkpts_dir, name, "chkpt.pth")
+    exp_path = os.path.join(chkpts_dir, name, "chkpt_"+str(exp['epoch'])+".pth")
+    torch.save(exp,exp_path)
+    exp_path = os.path.join(chkpts_dir, name, "latest.pth")
+    torch.save(exp,exp_path)
     torch.save(exp, exp_path)
     if isBest:
         best_exp_path = os.path.join(chkpts_dir, name, "best.pth")

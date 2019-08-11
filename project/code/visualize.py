@@ -64,7 +64,7 @@ def main():
     labelsPath = args.labels_folder_path
     idsPath = args.ids_file_path
 
-
+    current_experiment = 'exp4'
     with torch.no_grad():
         run(current_experiment, dataPath, labelsPath, idsPath)
 
