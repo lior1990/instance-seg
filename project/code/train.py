@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import torch.autograd
 from costum_dataset import *
 from torch.utils.data import DataLoader
@@ -126,8 +128,16 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
 
     fe = MetricLearningModel.FeatureExtractor(embedding_dim)
 
-
-    fe.load_state_dict(experiment['fe_state_dict'])
+    try:
+        fe.load_state_dict(experiment['fe_state_dict'])
+    except:
+        state_dict = OrderedDict()
+        prefix = 'module.'
+        for key, val in experiment['fe_state_dict'].items():
+            if key.startswith(prefix):
+                key = key[len(prefix):]
+            state_dict[key] = val
+        fe.load_state_dict(state_dict)
     current_epoch = experiment['epoch']
     train_fe_loss_history = experiment['train_fe_loss']
     # best_dice = experiment['best_dice']

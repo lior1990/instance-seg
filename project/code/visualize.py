@@ -84,7 +84,7 @@ def main():
 
 
 
-    current_experiment = 'exp_2epoch'
+    current_experiment = 'exp_11epoch'
     with torch.no_grad():
         run(current_experiment, dataPath, labelsPath, idsPath)
 
