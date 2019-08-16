@@ -4,6 +4,8 @@ from torch.utils.data import Dataset
 import PIL.Image as im
 import numpy as np
 from torchvision import transforms
+from config import PIXEL_IGNORE_VAL
+from config import PIXEL_BOUNDARY_VAL
 
 from augmentation import augmentation_func
 
@@ -52,6 +54,7 @@ class CostumeDataset(Dataset):
         label = im.open(os.path.join(self.labels_path, id + '.png'))
 
         size = label.size
+<<<<<<< HEAD
 
         img = self.data_transforms["default"](img)
         label = self.data_transforms["default"](label)
@@ -65,7 +68,48 @@ class CostumeDataset(Dataset):
         label = self.data_transforms["label"](label)
 
         return {'image': img, 'label': label, 'size': size}
+=======
+        img, label = resize_sample(img, label, self.h, self.w)
+        label = np.asarray(label)
+        img = self.toTensor(img)
+        img = self.normalize(img)
+        labelEdges = label.copy()
+        for h in range(self.h):
+            for w in range(self.w):
+                if not self.__isBoundaryPixel(h,w,label):
+                    labelEdges[h,w] = PIXEL_IGNORE_VAL # this is special value to ignore
+>>>>>>> c7ad46664cd9dceff92a2de29c4fcf9b27526372
 
+        return {'image': img, 'label': label,'labelEdges':labelEdges, 'size': size}
+
+    def __isBoundaryPixel(self,h,w,labelIm):
+        pixelVal = labelIm[h,w]
+        labelShape = labelIm.shape
+        if h>0: # not the top row
+            if pixelVal != labelIm[h-1,w]:
+                return True
+        if h<labelShape[0]-1: # not the bottom row
+            if pixelVal != labelIm[h+1,w]:
+                return True
+        if w>0: # not the most left column
+            if pixelVal != labelIm[h,w-1]:
+                return True
+        if w<labelShape[1]-1: # not the most right column
+            if pixelVal != labelIm[h,w+1]:
+                return True
+        if h>0 and w>0: # not in the top row and not in the left most column
+            if pixelVal != labelIm[h-1,w-1]:
+                return True
+        if h>0 and w<labelShape[1]-1: # not in the top row and not in the right most column
+            if pixelVal != labelIm[h-1,w+1]:
+                return True
+        if h<labelShape[0]-1 and w>0: # not in the bottom row and not in the left most column
+            if pixelVal != labelIm[h+1,w-1]:
+                return True
+        if h<labelShape[0]-1 and w<labelShape[1]-1: # not in the bottom row and not in the right most column
+            if pixelVal != labelIm[h+1,w+1]:
+                return True
+        return False
 
 class ResizeSample(object):
     '''
