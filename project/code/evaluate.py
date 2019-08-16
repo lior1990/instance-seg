@@ -1,6 +1,7 @@
 import numpy as np
 from torch.autograd import Variable
 from imageio import imsave
+# from scipy.misc import imsave
 import hdbscan
 from sklearn.decomposition import PCA
 import matplotlib
@@ -11,7 +12,7 @@ from skimage.transform import rescale
 from config import *
 
 
-def predict_label(features, downsample_factor=2, min_cluster=350):
+def predict_label(features, downsample_factor=1, min_cluster=50):
     '''
     predicts a segmentation mask from the network output. Uses PCA to reduce dimesionality
     of the input, mainly due to performance reasons.

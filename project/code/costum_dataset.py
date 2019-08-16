@@ -3,7 +3,10 @@ import os
 from torch.utils.data import Dataset
 import PIL.Image as im
 import numpy as np
+from matplotlib import pyplot as plt
 from torchvision import transforms
+from config import PIXEL_IGNORE_VAL
+from config import PIXEL_BOUNDARY_VAL
 
 from augmentation import augmentation_func
 
@@ -53,8 +56,8 @@ class CostumeDataset(Dataset):
 
         size = label.size
 
-        img = self.data_transforms["default"](img)
-        label = self.data_transforms["default"](label)
+        img = self.data_transforms["default"]((img,False))
+        label = self.data_transforms["default"]((label,True))
 
         if self.mode == "train":
             augmentation = self.data_transforms["augmentation"]
@@ -64,8 +67,43 @@ class CostumeDataset(Dataset):
         img = self.data_transforms["img"](img)
         label = self.data_transforms["label"](label)
 
-        return {'image': img, 'label': label, 'size': size}
 
+        labelEdges = label.copy()
+        for w in range(self.w):
+            for h in range(self.h):
+                if not self.__isBoundaryPixel(w,h,label):
+                    labelEdges[w,h] = PIXEL_IGNORE_VAL # this is special value to ignore
+
+        return {'image': img, 'label': label,'labelEdges':labelEdges, 'size': size}
+
+    def __isBoundaryPixel(self,w,h,labelIm):
+        pixelVal = labelIm[w,h]
+        labelShape = labelIm.shape
+        if h>0: # not the top row
+            if pixelVal != labelIm[w,h-1]:
+                return True
+        if h<labelShape[1]-1: # not the bottom row
+            if pixelVal != labelIm[w,h+1]:
+                return True
+        if w>0: # not the most left column
+            if pixelVal != labelIm[w-1,h]:
+                return True
+        if w<labelShape[0]-1: # not the most right column
+            if pixelVal != labelIm[w+1,h]:
+                return True
+        if h>0 and w>0: # not in the top row and not in the left most column
+            if pixelVal != labelIm[w-1,h-1]:
+                return True
+        if h>0 and w<labelShape[0]-1: # not in the top row and not in the right most column
+            if pixelVal != labelIm[w+1,h-1]:
+                return True
+        if h<labelShape[1]-1 and w>0: # not in the bottom row and not in the left most column
+            if pixelVal != labelIm[w-1,h+1]:
+                return True
+        if h<labelShape[1]-1 and w<labelShape[0]-1: # not in the bottom row and not in the right most column
+            if pixelVal != labelIm[w+1,h+1]:
+                return True
+        return False
 
 class ResizeSample(object):
     '''
@@ -89,7 +127,9 @@ class ResizeSample(object):
         self.restore = restore
         self.evaluate = evaluate
 
-    def __call__(self, img):
+    def __call__(self, imgTuple):
+        img = imgTuple[0]
+        isLabel = imgTuple[1]
         center_crop = transforms.CenterCrop([self.h, self.w])
 
         old_size = img.size  # old_size is in (width, height) format
@@ -101,7 +141,10 @@ class ResizeSample(object):
             ratio = min(w_ratio, h_ratio)
         new_size = tuple([int(x * ratio) for x in old_size])
 
-        img = img.resize(new_size, im.ANTIALIAS)
+        if not isLabel:
+            img = img.resize(new_size, im.ANTIALIAS)
+        else:
+            img = img.resize(new_size, im.NEAREST) # for labels use NEAREST to avoid adding "new" labels
 
         img = center_crop(img)
 
