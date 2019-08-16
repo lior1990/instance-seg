@@ -12,13 +12,13 @@ import MetricLearningModel
 import os
 
 
-def run(current_experiment, data_path, labels_path, ids_path):
+def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
 
     dataset = CostumeDataset(ids_path, data_path, labels_path, img_h=224, img_w=224)
     dataloader = DataLoader(dataset)
 
     # Set up an experiment
-    experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False)
+    experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False,currentEpoch=currentEpoch)
 
     fe = MetricLearningModel.FeatureExtractor(embedding_dim)
 
@@ -63,6 +63,7 @@ def main():
     # defaultDataPath = os.path.join('..', '..', 'COCO', 'train2017', '')
     # defaultLabelsPath = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
     # defaultIdsFile = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
+    # defaultIdsFile = os.path.join('..', '..', 'COCO', 'overfit.txt')
 
     defaultDataPath = os.path.join('..', '..', 'COCO', 'val2017', '')
     defaultLabelsPath = os.path.join('..', '..', 'COCO', 'val2017labels', 'instance_labels', '')
@@ -72,6 +73,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--current_experiment', help='Experiment name', required=False, default=defaultExperimentName)
+    parser.add_argument('--epoch_num',help='Epoch number',required=False,default='latest')
     parser.add_argument('--data_folder_path', required=False, default=defaultDataPath)
     parser.add_argument('--labels_folder_path', required=False, default=defaultLabelsPath)
     parser.add_argument('--ids_file_path', required=False, default=defaultIdsFile)
@@ -81,12 +83,14 @@ def main():
     dataPath = args.data_folder_path
     labelsPath = args.labels_folder_path
     idsPath = args.ids_file_path
+    currentEpoch = args.epoch_num
 
 
 
-    current_experiment = 'exp_11epoch'
+    current_experiment = 'exp3'
+    currentEpoch = str(4)
     with torch.no_grad():
-        run(current_experiment, dataPath, labelsPath, idsPath)
+        run(current_experiment,currentEpoch, dataPath, labelsPath, idsPath)
 
 
 if __name__ == '__main__':

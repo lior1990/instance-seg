@@ -167,9 +167,10 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
         for batch_num, batch in enumerate(train_dataloader):
             inputs = Variable(batch['image'].type(float_type))
             labels = batch['label'].cpu().numpy()
+            labelEdges = batch['labelEdges'].cpu().numpy()
             features = fe(inputs)
             fe_opt.zero_grad()
-            totalLoss = calcLoss(features,labels)
+            totalLoss = calcLoss(features,labels,labelEdges)
             totalLoss.backward()
             fe_opt.step()
 

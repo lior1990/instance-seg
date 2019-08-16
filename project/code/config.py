@@ -3,17 +3,25 @@ import os
 import MetricLearningModel
 import torch
 
+PIXEL_IGNORE_VAL = 255
+PIXEL_BOUNDARY_VAL = 255
+
 # Hyper parameters
 embedding_dim = 32
 batch_size = 64
+
+
 class LossParams:
     def __init__(self):
         self.alpha = 1
         self.beta = 1
+        self.edgePixelsMaxNum = 10
         self.gamma = 0.001
         self.norm = 2
         self.dv = 0.5
         self.dd = 1.5
+
+
 lossParams = LossParams()
 
 if torch.cuda.is_available() and torch.cuda.device_count() > 1:
@@ -38,7 +46,7 @@ else:
     long_type = torch.LongTensor
 
 
-def config_experiment(name, resume=True, useBest=False):
+def config_experiment(name, resume=True, useBest=False, currentEpoch='latest'):
     exp = {}
     try:
         os.makedirs(os.path.join(chkpts_dir, name))
@@ -52,7 +60,7 @@ def config_experiment(name, resume=True, useBest=False):
             if useBest:
                 exp_path = os.path.join(chkpts_dir, name, 'best.pth')
             else:
-                exp_path = os.path.join(chkpts_dir, name, "latest.pth")
+                exp_path = os.path.join(chkpts_dir, name, 'chkpt_' + currentEpoch + '.pth')
             exp = torch.load(exp_path, map_location=lambda storage, loc: storage)
             logger.info("loading checkpoint, experiment: " + name)
             return exp, logger
@@ -72,10 +80,10 @@ def config_experiment(name, resume=True, useBest=False):
 
 
 def save_experiment(exp, name, isBest=False):
-    exp_path = os.path.join(chkpts_dir, name, "chkpt_"+str(exp['epoch'])+".pth")
-    torch.save(exp,exp_path)
+    exp_path = os.path.join(chkpts_dir, name, "chkpt_" + str(exp['epoch']) + ".pth")
+    torch.save(exp, exp_path)
     exp_path = os.path.join(chkpts_dir, name, "latest.pth")
-    torch.save(exp,exp_path)
+    torch.save(exp, exp_path)
     torch.save(exp, exp_path)
     if isBest:
         best_exp_path = os.path.join(chkpts_dir, name, "best.pth")

@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from sklearn.manifold import TSNE
 import argparse
 import torch.autograd
@@ -11,7 +13,7 @@ import MetricLearningModel
 import os
 
 
-def run(current_experiment, data_path, labels_path, ids_path):
+def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
     try:
         os.makedirs(os.path.join('cluster_visualizations', current_experiment))
     except:
@@ -21,12 +23,20 @@ def run(current_experiment, data_path, labels_path, ids_path):
     dataloader = DataLoader(dataset)
 
     # Set up an experiment
-    experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False)
+    experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False,currentEpoch=currentEpoch)
 
     fe = MetricLearningModel.FeatureExtractor(embedding_dim)
 
-    fe.load_state_dict(experiment['fe_state_dict'])
-
+    try:
+        fe.load_state_dict(experiment['fe_state_dict'])
+    except:
+        state_dict = OrderedDict()
+        prefix = 'module.'
+        for key,val in experiment['fe_state_dict'].items():
+            if key.startswith(prefix):
+                key = key[len(prefix):]
+            state_dict[key] = val
+        fe.load_state_dict(state_dict)
     if torch.cuda.is_available():
         print("Using CUDA")
         fe.cuda()
@@ -74,12 +84,19 @@ def run(current_experiment, data_path, labels_path, ids_path):
 def main():
 
     defaultExperimentName = 'exp_' + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-    defaultDataPath = os.path.join('..', '..', 'COCO', 'train2017', '')
-    defaultLabelsPath = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
-    defaultIdsFile = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
+
+
+    # defaultDataPath = os.path.join('..', '..', 'COCO', 'train2017', '')
+    # defaultLabelsPath = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
+    # defaultIdsFile = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
+
+    defaultDataPath = os.path.join('..', '..', 'COCO', 'val2017', '')
+    defaultLabelsPath = os.path.join('..', '..', 'COCO', 'val2017labels', 'instance_labels', '')
+    defaultIdsFile = os.path.join('..', '..', 'COCO', 'val2017labels', 'images_ids.txt')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--current_experiment', help='Experiment name', required=False, default=defaultExperimentName)
+    parser.add_argument('--epoch_num',help='Epoch number',required=False,default='latest')
     parser.add_argument('--data_folder_path', required=False, default=defaultDataPath)
     parser.add_argument('--labels_folder_path', required=False, default=defaultLabelsPath)
     parser.add_argument('--ids_file_path', required=False, default=defaultIdsFile)
@@ -90,9 +107,10 @@ def main():
     labelsPath = args.labels_folder_path
     idsPath = args.ids_file_path
 
-
+    current_experiment = 'exp2'
+    currentEpoch = str(18)
     with torch.no_grad():
-        run(current_experiment, dataPath, labelsPath, idsPath)
+        run(current_experiment, currentEpoch, dataPath, labelsPath, idsPath)
 
 
 if __name__ == '__main__':
