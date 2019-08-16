@@ -5,6 +5,8 @@ import PIL.Image as im
 import numpy as np
 from torchvision import transforms
 
+from augmentation import augmentation_func
+
 
 class CostumeDataset(Dataset):
     '''
@@ -17,7 +19,7 @@ class CostumeDataset(Dataset):
     :param img_h, img_w - images are rescaled and cropped to this size.
     '''
 
-    def __init__(self, ids_file_path, data_path, labels_path, img_h=224, img_w=224):
+    def __init__(self, ids_file_path, data_path, labels_path, mode="val", img_h=224, img_w=224):
         ids_file = open(ids_file_path)
         self.ids = ids_file.read().split("\n")[:-1]
 
@@ -25,10 +27,21 @@ class CostumeDataset(Dataset):
         self.labels_path = labels_path
         self.h = img_h
         self.w = img_w
+        self.mode = mode
 
-        self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                              std=[0.229, 0.224, 0.225])
-        self.toTensor = transforms.ToTensor()
+        self.data_transforms = {
+            "default":  transforms.Compose([
+                ResizeSample(self.h, self.w)]
+            ),
+            "augmentation": augmentation_func,
+            "img": transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ]),
+            "label": transforms.Compose([
+                AsArray()
+            ])
+        }
 
     def __len__(self):
         return len(self.ids)
@@ -39,16 +52,24 @@ class CostumeDataset(Dataset):
         label = im.open(os.path.join(self.labels_path, id + '.png'))
 
         size = label.size
-        img, label = resize_sample(img, label, self.h, self.w)
-        label = np.asarray(label)
-        img = self.toTensor(img)
-        img = self.normalize(img)
+
+        img = self.data_transforms["default"](img)
+        label = self.data_transforms["default"](label)
+
+        if self.mode == "train":
+            augmentation = self.data_transforms["augmentation"]
+            # apply the same augmentation on image and label
+            img, label = augmentation(img, label)
+
+        img = self.data_transforms["img"](img)
+        label = self.data_transforms["label"](label)
+
         return {'image': img, 'label': label, 'size': size}
 
 
-def resize_sample(img, label, h, w, restore=False, evaluate=False):
+class ResizeSample(object):
     '''
-    utility function to resize sample(PIL image and label) to a given dimension
+    utility transformation to resize sample(PIL image and label) to a given dimension
     without cropping information. the network takes in tensors with dimensions
     that are multiples of 32.
     :param img: PIL image to resize
@@ -61,21 +82,32 @@ def resize_sample(img, label, h, w, restore=False, evaluate=False):
                         if False, images are rescaled on the short side and cropped.
     :return: the resized image, label
     '''
-    center_crop = transforms.CenterCrop([h, w])
 
-    old_size = img.size  # old_size is in (width, height) format
-    w_ratio = float(w) / old_size[0]
-    h_ratio = float(h) / old_size[1]
-    if restore or not evaluate:
-        ratio = max(w_ratio, h_ratio)
-    else:
-        ratio = min(w_ratio, h_ratio)
-    new_size = tuple([int(x * ratio) for x in old_size])
+    def __init__(self, h, w, restore=False, evaluate=False):
+        self.h = h
+        self.w = w
+        self.restore = restore
+        self.evaluate = evaluate
 
-    img = img.resize(new_size, im.ANTIALIAS)
-    label = label.resize(new_size, im.ANTIALIAS)
+    def __call__(self, img):
+        center_crop = transforms.CenterCrop([self.h, self.w])
 
-    img = center_crop(img)
-    label = center_crop(label)
+        old_size = img.size  # old_size is in (width, height) format
+        w_ratio = float(self.w) / old_size[0]
+        h_ratio = float(self.h) / old_size[1]
+        if self.restore or not self.evaluate:
+            ratio = max(w_ratio, h_ratio)
+        else:
+            ratio = min(w_ratio, h_ratio)
+        new_size = tuple([int(x * ratio) for x in old_size])
 
-    return img, label
+        img = img.resize(new_size, im.ANTIALIAS)
+
+        img = center_crop(img)
+
+        return img
+
+
+class AsArray(object):
+    def __call__(self, img):
+        return np.asarray(img)

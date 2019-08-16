@@ -120,7 +120,8 @@ import os
 #     return
 def run(current_experiment, train_data_folder_path, train_labels_folder_path, train_ids_path):
     # Dataloader
-    train_dataset = CostumeDataset(train_ids_path, train_data_folder_path, train_labels_folder_path, img_h=224, img_w=224)
+    train_dataset = CostumeDataset(train_ids_path, train_data_folder_path, train_labels_folder_path,
+                                   mode="train", img_h=224, img_w=224)
     train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True,num_workers=8)
 
     # Set up an experiment
