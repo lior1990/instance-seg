@@ -24,7 +24,7 @@ def main():
     # default_val_data_path = os.path.join('..', '..', 'COCO', 'val2017', '')
     # default_val_labels_path = os.path.join('..', '..', 'COCO', 'val2017labels', 'instance_labels', '')
     default_train_ids_file = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
-    # default_train_ids_file = os.path.join('..', '..', 'COCO', 'overfit.txt')
+    default_train_ids_file = os.path.join('..', '..', 'COCO', 'overfit.txt')
     # default_val_ids_file = os.path.join('..', '..', 'COCO', 'val2017labels', 'images_ids.txt')
 
     parser = argparse.ArgumentParser()

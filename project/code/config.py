@@ -79,7 +79,7 @@ def config_experiment(name, resume=True, useBest=False, currentEpoch='latest'):
 def save_experiment(exp, name, isBest=False):
     exp_path = os.path.join(chkpts_dir, name, "chkpt_" + str(exp['epoch']) + ".pth")
     torch.save(exp, exp_path)
-    exp_path = os.path.join(chkpts_dir, name, "latest.pth")
+    exp_path = os.path.join(chkpts_dir, name, "chkpt_latest.pth")
     torch.save(exp, exp_path)
     torch.save(exp, exp_path)
     if isBest:

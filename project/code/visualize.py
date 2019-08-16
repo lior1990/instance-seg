@@ -87,8 +87,8 @@ def main():
 
 
 
-    current_experiment = 'exp3'
-    currentEpoch = str(4)
+    current_experiment = 'exp_no_edges_dim32'
+    currentEpoch = str(1)
     with torch.no_grad():
         run(current_experiment,currentEpoch, dataPath, labelsPath, idsPath)
 
