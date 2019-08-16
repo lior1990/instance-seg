@@ -61,29 +61,32 @@ def getDistLoss(clusterMeans, clusters):
     if N < 2:
         return distLoss
     for cA in range(N):
-        clusterA = clusterMeans[cA]
+        clusterAMean = clusterMeans[cA]
         for cB in range(cA + 1, N):
-            clusterB = clusterMeans[cB]
+            clusterBMean = clusterMeans[cB]
+            # making sure that the clusters centers are far from each other by at least 2*dd
             distLoss = distLoss + torch.relu(
-                2 * lossParams.dd - torch.norm(clusterA - clusterB, p=lossParams.norm)
+                2 * lossParams.dd - torch.norm(clusterAMean - clusterBMean, p=lossParams.norm)
             ) ** 2
 
-    edgeLoss = Variable(torch.Tensor([0])).type(double_type)
-    for cA in range(N):
-        clusterAEdges = clusters[cA][1]
-        for cB in range(cA + 1, N):
-            clusterBEdges = clusters[cB][1]
-            clusterAEdgesRepeated = clusterAEdges.repeat(clusterBEdges.shape[0], 1)
-            clusterBEdgesRepeated = clusterBEdges.repeat(1, clusterAEdges.shape[0]).view(clusterAEdgesRepeated.shape[0],
-                                                                                         -1)
-            edgeLoss = torch.sum(
-                torch.relu(
-                    2 * (lossParams.dd - lossParams.dv) - torch.norm(clusterAEdgesRepeated - clusterBEdgesRepeated,
-                                                                     p=lossParams.norm, dim=1)
-                )
-                ** 2) / clusterAEdgesRepeated.shape[0]
 
-    distLoss = (edgeLoss + distLoss) / (N * (N - 1))
+    if lossParams.objectEdgeContributeToLoss:
+        for cA in range(N):
+            clusterAEdges = clusters[cA][1]
+            for cB in range(cA+1,N):
+                clusterBEdges = clusters[cB][1]
+                clusterAEdgesRepeated = clusterAEdges.repeat(clusterBEdges.shape[0], 1)
+                clusterBEdgesRepeated = clusterBEdges.repeat(1, clusterAEdges.shape[0]).view(
+                    clusterAEdgesRepeated.shape[0],
+                    -1)
+                # making sure that that the edges of each instance are at least 2(dd-dv) apart
+                distLoss = distLoss + torch.sum(torch.relu(
+                    2 * (lossParams.dd - lossParams.dv) - torch.norm(clusterAEdgesRepeated - clusterBEdgesRepeated,
+                                                                     p=lossParams.norm, dim=1)) ** 2) / \
+                           clusterAEdgesRepeated.shape[0]
+
+
+    distLoss = distLoss / (N * (N - 1))
     return distLoss
 
 
