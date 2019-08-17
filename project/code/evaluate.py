@@ -12,7 +12,7 @@ from skimage.transform import rescale
 from config import *
 
 
-def predict_label(features, downsample_factor=1, min_cluster=50):
+def predict_label(features, downsample_factor=1, min_cluster=10):
     '''
     predicts a segmentation mask from the network output. Uses PCA to reduce dimesionality
     of the input, mainly due to performance reasons.

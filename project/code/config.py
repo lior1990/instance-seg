@@ -15,11 +15,11 @@ class LossParams:
     def __init__(self):
         self.alpha = 1
         self.beta = 1
-        self.objectEdgeContributeToLoss = False
+        self.objectEdgeContributeToLoss = True
         self.edgePixelsMaxNum = 200 # float('inf')
         self.gamma = 0.001
         self.norm = 2
-        self.dv = 0.01
+        self.dv = 2
         self.dd = 10
 
 
