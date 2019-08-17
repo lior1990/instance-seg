@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from evaluate import *
 from config import *
 from datetime import datetime
-import MetricLearningModel
+from ModelWithLoss import CompleteModel
 
 import os
 
@@ -20,7 +20,7 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
     # Set up an experiment
     experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False,currentEpoch=currentEpoch)
 
-    fe = MetricLearningModel.FeatureExtractor(embedding_dim)
+    fe = CompleteModel(embedding_dim)
 
     try:
         fe.load_state_dict(experiment['fe_state_dict'])
@@ -45,7 +45,7 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
         try:
             inputs = Variable(batch['image'].type(float_type))
             labels = batch['label'].cpu().numpy()
-            features = fe(inputs)
+            features,xxx = fe(inputs,None,None)
             inputs = inputs.cpu().numpy().squeeze()
             features  = features.cpu().numpy().squeeze()
             labels = labels.squeeze()
@@ -60,14 +60,14 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
 def main():
 
     defaultExperimentName = 'exp_' + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-    # defaultDataPath = os.path.join('..', '..', 'COCO', 'train2017', '')
-    # defaultLabelsPath = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
-    # defaultIdsFile = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
-    # defaultIdsFile = os.path.join('..', '..', 'COCO', 'overfit.txt')
-
-    defaultDataPath = os.path.join('..', '..', 'COCO', 'val2017', '')
-    defaultLabelsPath = os.path.join('..', '..', 'COCO', 'val2017labels', 'instance_labels', '')
-    defaultIdsFile = os.path.join('..', '..', 'COCO', 'val2017labels', 'images_ids.txt')
+    defaultDataPath = os.path.join('..', '..', 'COCO', 'train2017', '')
+    defaultLabelsPath = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
+    defaultIdsFile = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
+    defaultIdsFile = os.path.join('..', '..', 'COCO', 'overfit.txt')
+    #
+    # defaultDataPath = os.path.join('..', '..', 'COCO', 'val2017', '')
+    # defaultLabelsPath = os.path.join('..', '..', 'COCO', 'val2017labels', 'instance_labels', '')
+    # defaultIdsFile = os.path.join('..', '..', 'COCO', 'val2017labels', 'images_ids.txt')
 
 
 
@@ -87,7 +87,7 @@ def main():
 
 
 
-    current_experiment = 'exp_no_edges_dim32'
+    current_experiment = 'exp_overfit'
     currentEpoch = str(1)
     with torch.no_grad():
         run(current_experiment,currentEpoch, dataPath, labelsPath, idsPath)

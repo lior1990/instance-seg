@@ -1,6 +1,6 @@
 import logging
 import os
-import MetricLearningModel
+from ModelWithLoss import CompleteModel
 import torch
 
 PIXEL_IGNORE_VAL = 255
@@ -47,6 +47,7 @@ else:
     long_type = torch.LongTensor
 
 
+
 def config_experiment(name, resume=True, useBest=False, currentEpoch='latest'):
     exp = {}
     try:
@@ -68,7 +69,7 @@ def config_experiment(name, resume=True, useBest=False, currentEpoch='latest'):
         except Exception as e:
             logger.warning('checkpoint does not exist. creating new experiment')
 
-    fe = MetricLearningModel.FeatureExtractor(embedding_dim)
+    fe = CompleteModel(embedding_dim)
     exp['epoch'] = 0
     exp['fe_state_dict'] = fe.state_dict()
     exp['train_fe_loss'] = []
@@ -80,7 +81,6 @@ def save_experiment(exp, name, isBest=False):
     exp_path = os.path.join(chkpts_dir, name, "chkpt_" + str(exp['epoch']) + ".pth")
     torch.save(exp, exp_path)
     exp_path = os.path.join(chkpts_dir, name, "chkpt_latest.pth")
-    torch.save(exp, exp_path)
     torch.save(exp, exp_path)
     if isBest:
         best_exp_path = os.path.join(chkpts_dir, name, "best.pth")

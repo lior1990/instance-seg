@@ -3,10 +3,8 @@ import os
 from torch.utils.data import Dataset
 import PIL.Image as im
 import numpy as np
-from matplotlib import pyplot as plt
 from torchvision import transforms
 from config import PIXEL_IGNORE_VAL
-from config import PIXEL_BOUNDARY_VAL
 
 from augmentation import augmentation_func
 

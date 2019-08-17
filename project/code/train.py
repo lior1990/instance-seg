@@ -4,11 +4,9 @@ import torch.autograd
 from costum_dataset import *
 from torch.utils.data import DataLoader
 import torch.nn as nn
-from loss import calcLoss
 from evaluate import *
 from config import *
-import MetricLearningModel
-
+from ModelWithLoss import CompleteModel
 import os
 
 
@@ -21,7 +19,7 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
     # Set up an experiment
     experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False)
 
-    fe = MetricLearningModel.FeatureExtractor(embedding_dim)
+    fe = CompleteModel(embedding_dim)
 
     try:
         fe.load_state_dict(experiment['fe_state_dict'])
@@ -58,13 +56,13 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
             inputs = Variable(batch['image'].type(float_type))
             labels = batch['label'].cpu().numpy()
             labelEdges = batch['labelEdges'].cpu().numpy()
-            features = fe(inputs)
             fe_opt.zero_grad()
-            totalLoss = calcLoss(features, labels, labelEdges)
+            features,losses = fe(inputs,labels,labelEdges)
+            totalLoss = losses.mean()
             totalLoss.backward()
             fe_opt.step()
 
-            np_fe_loss = totalLoss.cpu().data[0]
+            np_fe_loss = totalLoss.cpu().item()
 
             running_fe_loss += np_fe_loss
             exp_logger.info('epoch: ' + str(i) + ', batch number: ' + str(batch_num) +
