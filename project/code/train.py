@@ -47,10 +47,10 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
 
     fe.to(device)
 
-    fe_opt = torch.optim.Adam(filter(lambda p: p.requires_grad, fe.parameters()), learning_rate)
+    fe_opt = torch.optim.SGD(filter(lambda p:p.requires_grad,fe.parameters()),lr = trainParams.learning_rate,momentum=0.9,nesterov=True)
 
-    for i in range(current_epoch, max_epoch_num):
-        adjust_learning_rate(fe_opt, i, learning_rate, lr_decay)
+    for i in range(current_epoch, trainParams.max_epoch_num):
+        adjust_learning_rate(fe_opt, i, trainParams.learning_rate, trainParams.lr_decay)
         running_fe_loss = 0
         for batch_num, batch in enumerate(train_dataloader):
             inputs = Variable(batch['image'].type(float_type))
@@ -69,14 +69,14 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
                             ', loss: ' + "{0:.2f}".format(np_fe_loss))
 
         train_fe_loss = running_fe_loss / (batch_num + 1)
-
-        exp_logger.info('Saving checkpoint...')
         train_fe_loss_history.append(train_fe_loss)
 
-        # Save experiment
-        save_experiment({'fe_state_dict': fe.state_dict(),
-                         'epoch': i + 1,
-                         'train_fe_loss': train_fe_loss_history}, current_experiment)
+        if current_epoch % trainParams.saveModelIntervalEpochs == 0:
+            # Save experiment
+            exp_logger.info('Saving checkpoint...')
+            save_experiment({'fe_state_dict': fe.state_dict(),
+                             'epoch': i + 1,
+                             'train_fe_loss': train_fe_loss_history}, current_experiment)
         # Plot and save loss history
         plt.plot(train_fe_loss_history, 'r')
         try:

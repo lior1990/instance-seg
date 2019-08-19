@@ -8,7 +8,7 @@ PIXEL_BOUNDARY_VAL = 255
 
 # Hyper parameters
 embedding_dim = 32
-batch_size = 32
+batch_size = 6
 
 
 class LossParams:
@@ -28,9 +28,13 @@ lossParams = LossParams()
 if torch.cuda.is_available() and torch.cuda.device_count() > 1:
     batch_size = batch_size * torch.cuda.device_count()
 
-learning_rate = 0.0003
-lr_decay = 0.98
-max_epoch_num = 100000
+class TrainParams:
+    def __init__(self):
+        self.learning_rate = 0.01
+        self.lr_decay = 0.99
+        self.max_epoch_num = 1000
+        self.saveModelIntervalEpochs = 10
+trainParams = TrainParams()
 
 # Checkpoints and logs directory - make sure to set local paths
 chkpts_dir = 'model_checkpoints'
