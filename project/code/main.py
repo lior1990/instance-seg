@@ -13,15 +13,18 @@ def _train(current_experiment, train_data_folder_path, train_labels_folder_path,
 
 def main():
     default_experiment_name = 'exp_' + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+
     # default_train_data_path = os.path.join('..', '..', 'COCO', 'train2017', '')
     default_train_data_path = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images', '')
+
     # default_train_labels_path = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
     default_train_labels_path = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'labels', '')
 
     # default_train_ids_file = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
-    # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images_ids.txt')
-    default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'overfit.txt')
+    default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images_ids.txt')
+
     # default_train_ids_file = os.path.join('..', '..', 'COCO', 'overfit.txt')
+    default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'overfit.txt')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--current_experiment', help='Experiment name', required=False, default=default_experiment_name)
@@ -42,8 +45,7 @@ def main():
         # should be a number or a list of comma separated numbers
         os.environ["CUDA_VISIBLE_DEVICES"] = GPUs
 
-
-    current_experiment = 'leafs'
+    current_experiment='leafs'
 
     print('experiment:', current_experiment)
     print('train data folder path:', train_data_folder_path)

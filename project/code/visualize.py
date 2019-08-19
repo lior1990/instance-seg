@@ -64,15 +64,19 @@ def main():
     # defaultLabelsPath = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
     # defaultIdsFile = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
     # defaultIdsFile = os.path.join('..', '..', 'COCO', 'overfit.txt')
-    #
+
     # defaultDataPath = os.path.join('..', '..', 'COCO', 'val2017', '')
     # defaultLabelsPath = os.path.join('..', '..', 'COCO', 'val2017labels', 'instance_labels', '')
     # defaultIdsFile = os.path.join('..', '..', 'COCO', 'val2017labels', 'images_ids.txt')
 
-    defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images', '')
-    defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'labels', '')
+    # defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images', '')
+    # defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'labels', '')
     # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images_ids.txt')
-    defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'overfit.txt')
+    # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'overfit.txt')
+
+    defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'images', '')
+    defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'labels', '')
+    defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'images_ids.txt')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--current_experiment', help='Experiment name', required=False, default=defaultExperimentName)
@@ -90,8 +94,8 @@ def main():
 
 
 
-    current_experiment = 'leafs'
-    currentEpoch = str(23)
+    current_experiment = 'no_edges_16dim'
+    currentEpoch = str(20)
     with torch.no_grad():
         run(current_experiment,currentEpoch, dataPath, labelsPath, idsPath)
 
