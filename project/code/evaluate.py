@@ -1,7 +1,7 @@
 import numpy as np
 from torch.autograd import Variable
-from imageio import imsave
-# from scipy.misc import imsave
+# from imageio import imsave
+from scipy.misc import imsave
 import hdbscan
 from sklearn.decomposition import PCA
 import matplotlib

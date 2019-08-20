@@ -5,6 +5,7 @@ import PIL.Image as im
 import numpy as np
 from torchvision import transforms
 from config import PIXEL_IGNORE_VAL
+from config import PIXEL_BOUNDARY_VAL
 
 from augmentation import augmentation_func
 
@@ -65,7 +66,6 @@ class CostumeDataset(Dataset):
         img = self.data_transforms["img"](img)
         label = self.data_transforms["label"](label)
 
-
         labelEdges = label.copy()
         for w in range(self.w):
             for h in range(self.h):
@@ -76,6 +76,8 @@ class CostumeDataset(Dataset):
 
     def __isBoundaryPixel(self,w,h,labelIm):
         pixelVal = labelIm[w,h]
+        if pixelVal==PIXEL_IGNORE_VAL or pixelVal==PIXEL_BOUNDARY_VAL:
+            return False
         labelShape = labelIm.shape
         if h>0: # not the top row
             if pixelVal != labelIm[w,h-1]:
