@@ -61,7 +61,7 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
         adjust_learning_rate(fe_opt, i, trainParams.learning_rate, trainParams.lr_decay)
         running_fe_loss = 0
         for batch_num, batch in enumerate(train_dataloader):
-            inputs = Variable(batch['image'].type(float_type))
+            inputs = Variable(batch['image'].type(double_type))
             labels = batch['label'].cpu().numpy()
             labelEdges = batch['labelEdges'].cpu().numpy()
             fe_opt.zero_grad()

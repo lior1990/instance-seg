@@ -31,10 +31,10 @@ if torch.cuda.is_available() and torch.cuda.device_count() > 1:
 
 class TrainParams:
     def __init__(self):
-        self.learning_rate = 0.0003
-        self.lr_decay = 0.999
-        self.max_epoch_num = 501
-        self.saveModelIntervalEpochs = 1
+        self.learning_rate = 0.01
+        self.lr_decay = 0.95
+        self.max_epoch_num = 1001
+        self.saveModelIntervalEpochs = 5
 
 
 trainParams = TrainParams()

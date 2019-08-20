@@ -1,6 +1,7 @@
 from MetricLearningModel import FeatureExtractor
 from lossModule import LossModule
 import torch.nn as nn
+import config
 
 
 class CompleteModel(nn.Module):
@@ -8,6 +9,7 @@ class CompleteModel(nn.Module):
         super(CompleteModel,self).__init__()
         self.fe = FeatureExtractor(embeddingDim)
         self.l = LossModule()
+        self.type(config.double_type)
     def forward(self, imgBatch,lblBatch,lblEdgBatch):
         features = self.fe(imgBatch)
         if self.training:
