@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import skimage.measure
 from skimage.transform import rescale
 from config import *
+from mrf_wrapper import denoise_colored_image
 
 
 def predict_label(features, downsample_factor=1, min_cluster=10):
@@ -36,12 +37,15 @@ def predict_label(features, downsample_factor=1, min_cluster=10):
     cluster_mask = cluster_features(reduced_features, min_cluster) # cluster with hDBSCAN
     #cluster_mask = determine_background(flat_features, cluster_mask)
     predicted_label = np.reshape(cluster_mask, [h,w])
+
+    predicted_label = denoise_colored_image(predicted_label)
+
     predicted_label = rescale(predicted_label, order=0, mode='constant', scale=downsample_factor,
                               preserve_range=True)
     return np.asarray(predicted_label, np.int32)
 
 
-def cluster_features(features, min_cluster=10):
+def cluster_features(features, min_cluster):
     '''
     this function takes a (h*w,c) numpy array, and clusters the c-dim points using MeanShift/DBSCAN.
     this function is meant to use for visualization and evaluation only.  Meanshift is much slower
