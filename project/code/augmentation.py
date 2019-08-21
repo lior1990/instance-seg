@@ -1,4 +1,4 @@
-import random
+from numpy import random
 
 from torchvision.transforms import ColorJitter, Grayscale, RandomChoice
 from torchvision.transforms.functional import hflip, vflip, rotate

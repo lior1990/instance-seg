@@ -10,11 +10,25 @@ from ModelWithLoss import CompleteModel
 import os
 
 
+def set_random_seed():
+    # set random seed for pseudo-random generators so experiment results can be reproducible
+    torch.manual_seed(0)
+    np.random.seed(0)
+
+
+def worker_init_fn(worker_id):
+    set_random_seed()
+
+
+set_random_seed()
+
+
 def run(current_experiment, train_data_folder_path, train_labels_folder_path, train_ids_path):
     # Dataloader
     train_dataset = CostumeDataset(train_ids_path, train_data_folder_path, train_labels_folder_path,
                                    mode="train", img_h=224, img_w=224)
-    train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True, num_workers=8)
+    train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True, num_workers=8,
+                                  worker_init_fn=worker_init_fn)
 
     # Set up an experiment
     experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False)
