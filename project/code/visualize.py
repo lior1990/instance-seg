@@ -74,14 +74,13 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
 
     fe.eval()
     for i,batch in enumerate(dataloader):
-        try:
-            inputs = Variable(batch['image'].type(float_type))
-            labels = batch['label'].cpu().numpy()
-            features,xxx = fe(inputs,None,None)
-            inputs = inputs.cpu().numpy().squeeze()
-            features  = features.cpu().numpy().squeeze()
-            labels = labels.squeeze()
-            visualize(inputs,labels,features,current_experiment,i)
-        except:
-            continue
+        inputs = Variable(batch['image'].type(float_type))
+        labels = batch['label'].cpu().numpy()
+        results = fe(inputs,None,None)
+        features = results[0]
+        inputs = inputs.cpu().numpy().squeeze()
+        features  = features.cpu().numpy().squeeze()
+        labels = labels.squeeze()
+        visualize(inputs,labels,features,current_experiment,i)
+
     return

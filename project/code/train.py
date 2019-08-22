@@ -1,6 +1,5 @@
 import torch.autograd
 from costum_dataset import *
-from torch.utils.data import DataLoader
 from evaluate import *
 from config import *
 import os
@@ -20,18 +19,22 @@ def worker_init_fn(worker_id):
     set_random_seed()
 
 
-def run(current_experiment, train_data_folder_path, train_labels_folder_path, train_ids_path):
+def run(current_experiment, train_data_set_params, loss_params, sub_experiment_name=''):
     set_random_seed()
     # Dataloader
-    train_dataset = CostumeDataset(train_ids_path, train_data_folder_path, train_labels_folder_path,
+    train_dataset = CostumeDataset(train_data_set_params.ids_path,
+                                   train_data_set_params.data_folder_path,
+                                   train_data_set_params.labels_folder_path,
                                    mode="train", img_h=224, img_w=224)
     train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True, num_workers=4,
                                   worker_init_fn=worker_init_fn)
 
     # Set up an experiment
 
-    fe, fe_opt, optScheduler, exp_logger, current_epoch, train_fe_loss_history = \
-        config_experiment(current_experiment, resume=True, useBest=False)
+    model, model_optimizer, optimizer_scheduler, exp_logger, current_epoch, train_loss_history = \
+        config_experiment(current_experiment, loss_params=loss_params,
+                          sub_experiment_name=sub_experiment_name,
+                          resume=True, useBest=False)
 
     exp_logger.info('training started/resumed at epoch ' + str(current_epoch))
 
@@ -41,21 +44,21 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
         running_dist_loss = 0
         running_edge_loss = 0
         running_reg_loss = 0
-        optScheduler.step()
-        exp_logger.info('epoch: ' + str(i) + ' LR: ' + str(optScheduler.get_lr()))
+        optimizer_scheduler.step()
+        exp_logger.info('epoch: ' + str(i) + ' LR: ' + str(optimizer_scheduler.get_lr()))
         for batch_num, batch in enumerate(train_dataloader):
             inputs = Variable(batch['image'].type(float_type))
             labels = batch['label'].cpu().numpy()
             labelEdges = batch['labelEdges'].cpu().numpy()
-            fe_opt.zero_grad()
-            features, totLoss, varLoss, distLoss, edgeLoss, regLoss = fe(inputs, labels, labelEdges)
+            model_optimizer.zero_grad()
+            features, totLoss, varLoss, distLoss, edgeLoss, regLoss = model(inputs, labels, labelEdges)
             totalLoss = totLoss.sum() / batch_size
             varianceLoss = varLoss.sum() / batch_size
             distanceLoss = distLoss.sum() / batch_size
             edgeToEdgeLoss = edgeLoss.sum() / batch_size
             regularizationLoss = regLoss.sum() / batch_size
             totalLoss.backward()
-            fe_opt.step()
+            model_optimizer.step()
 
             np_fe_loss = totalLoss.cpu().item()
             np_var_loss = varianceLoss.cpu().item()
@@ -75,24 +78,25 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
                             ', edge loss: ' + '{0:.2f}'.format(np_edge_loss) +
                             ', reg loss: ' + '{0:.2f}'.format(np_reg_loss))
 
-        train_fe_loss = running_fe_loss / (batch_num + 1)
-        train_fe_loss_history.append(train_fe_loss)
+        train_loss = running_fe_loss / (batch_num + 1)
+        train_loss_history.append(train_loss)
 
         if i % trainParams.saveModelIntervalEpochs == 0:
             # Save experiment
             exp_logger.info('Saving checkpoint...')
-            save_experiment({'fe_state_dict': fe.state_dict(),
+            save_experiment({'fe_state_dict': model.state_dict(),
                              'epoch': i + 1,
-                             'train_fe_loss': train_fe_loss_history},
-                            {'opt_state_dict': fe_opt.state_dict()},
-                            current_experiment)
+                             'train_fe_loss': train_loss_history},
+                            {'opt_state_dict': model_optimizer.state_dict()},
+                            current_experiment, sub_experiment_name=sub_experiment_name)
         # Plot and save loss history
-        plt.plot(train_fe_loss_history, 'r')
+        plt.plot(train_loss_history, 'r')
         try:
-            os.makedirs(os.path.join('visualizations', current_experiment))
+            os.makedirs(os.path.join('visualizations', current_experiment, sub_experiment_name))
         except:
             pass
-        plt.savefig(os.path.join('visualizations', current_experiment, 'fe_loss.png'))
+        plt.savefig(os.path.join('visualizations', current_experiment, sub_experiment_name, 'fe_loss.png'))
         plt.close()
 
-    return
+    # todo: use VAL loss instead of train loss
+    return train_loss

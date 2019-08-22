@@ -6,8 +6,8 @@ import torch.nn as nn
 from optimizer import *
 
 
-def loadAll(modelChkpt, optimizerChkpt, lastEpochTrained):
-    model = CompleteModel(config.embedding_dim)
+def loadAll(modelChkpt, optimizerChkpt, lastEpochTrained, loss_params):
+    model = CompleteModel(config.embedding_dim, loss_params)
     if modelChkpt is not None:
         try:
             model.load_state_dict(modelChkpt['fe_state_dict'])

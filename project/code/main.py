@@ -5,9 +5,9 @@ from utils.argument_parser import train_argument_parser
 
 def _train(current_experiment, train_data_folder_path, train_labels_folder_path, train_ids_path):
     # this must be imported after setting CUDA_VISIBLE_DEVICES environment variable, otherwise it won't work
-    from train import run
-
-    run(current_experiment, train_data_folder_path, train_labels_folder_path, train_ids_path)
+    from cross_validation import CrossValidation
+    cv = CrossValidation(current_experiment)
+    cv.run(train_data_folder_path, train_labels_folder_path, train_ids_path)
 
 
 def main():
