@@ -1,15 +1,63 @@
-import argparse
-from collections import OrderedDict
+import os
+import numpy as np
+import matplotlib
+
+matplotlib.use('Agg')
 
 import torch.autograd
-from costum_dataset import *
+from imageio import imsave
+from matplotlib import pyplot as plt
+from costum_dataset import CostumeDataset
 from torch.utils.data import DataLoader
-from evaluate import *
-from config import *
-from datetime import datetime
-from ModelWithLoss import CompleteModel
+from torch.autograd import Variable
+from config import config_experiment, float_type
+from utils.argument_parser import validation_argument_parser
+from utils.model_loader import load_model_from_experiment
+from prediction import predict_label
 
-import os
+
+def visualize(input, label, features, name, id):
+    '''
+    This function performs postprocessing (dimensionality reduction and clustering) for a given network
+    output. it also visualizes the resulted segmentation along with the original image and the ground truth
+    segmentation and saves all the images locally.
+    :param input: (3, h, w) ndarray containing rgb data as outputted by the costume datasets
+    :param label: (h, w) or (1, h, w) ndarray with the ground truth segmentation
+    :param features: (c, h, w) ndarray with the embedded pixels outputted by the network
+    :param name: str with the current experiment name
+    :param id: an identifier for the current image (for file saving purposes)
+    :return: None. all the visualizations are saved locally
+    '''
+    # Save original image
+    os.path.join("visualizations", name, "segmentations")
+    os.makedirs(os.path.join("visualizations", name, "segmentations"), exist_ok=True)
+    img_data = np.transpose(input, [1, 2, 0])
+    max_val = np.amax(np.absolute(img_data))
+    img_data = (img_data/max_val + 1) / 2  # normalize img
+    image_path = os.path.join("visualizations", name, "segmentations", str(id)+"img.jpg")
+    imsave(image_path, img_data)
+
+    # Save ground truth
+    if len(label.shape)==3:
+        label = np.squeeze(label)
+    label[np.where(label==255)] = 0
+    label = label.astype(np.int32)
+    gt_path = os.path.join("visualizations", name, "segmentations", str(id)+"gt.jpg")
+    imsave(gt_path, label)
+
+    # reduce features dimensionality and predict label
+    predicted_label = predict_label(features, downsample_factor=2)
+    seg_path = os.path.join("visualizations", name, "segmentations", str(id)+"seg.jpg")
+    imsave(seg_path, predicted_label)
+
+    # draw predicted seg on img and save
+    plt.imshow(img_data)
+    plt.imshow(predicted_label, alpha=0.5)
+    vis_path = os.path.join("visualizations", name, "segmentations", str(id)+"vis.jpg")
+    plt.savefig(vis_path)
+    plt.close()
+
+    return
 
 
 def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
@@ -20,21 +68,7 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
     # Set up an experiment
     experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False,currentEpoch=currentEpoch)
 
-    fe = CompleteModel(embedding_dim)
-
-    try:
-        fe.load_state_dict(experiment['fe_state_dict'])
-    except:
-        state_dict = OrderedDict()
-        prefix = 'module.'
-        for key,val in experiment['fe_state_dict'].items():
-            if key.startswith(prefix):
-                key = key[len(prefix):]
-            state_dict[key] = val
-        fe.load_state_dict(state_dict)
-
-
-
+    fe = load_model_from_experiment(experiment)
 
     if torch.cuda.is_available():
         print("Using CUDA")
@@ -55,47 +89,9 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
     return
 
 
-
-
 def main():
+    current_experiment, currentEpoch, dataPath, labelsPath, idsPath = validation_argument_parser()
 
-    defaultExperimentName = 'exp_' + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-    # defaultDataPath = os.path.join('..', '..', 'COCO', 'train2017', '')
-    # defaultLabelsPath = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
-    # defaultIdsFile = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
-    # defaultIdsFile = os.path.join('..', '..', 'COCO', 'overfit.txt')
-
-    # defaultDataPath = os.path.join('..', '..', 'COCO', 'val2017', '')
-    # defaultLabelsPath = os.path.join('..', '..', 'COCO', 'val2017labels', 'instance_labels', '')
-    # defaultIdsFile = os.path.join('..', '..', 'COCO', 'val2017labels', 'images_ids.txt')
-
-    # defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images', '')
-    # defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'labels', '')
-    # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images_ids.txt')
-    # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'overfit.txt')
-
-    defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'images', '')
-    defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'labels', '')
-    defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'images_ids.txt')
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--current_experiment', help='Experiment name', required=False, default=defaultExperimentName)
-    parser.add_argument('--epoch_num',help='Epoch number',required=False,default='latest')
-    parser.add_argument('--data_folder_path', required=False, default=defaultDataPath)
-    parser.add_argument('--labels_folder_path', required=False, default=defaultLabelsPath)
-    parser.add_argument('--ids_file_path', required=False, default=defaultIdsFile)
-
-    args = parser.parse_args()
-    current_experiment = args.current_experiment
-    dataPath = args.data_folder_path
-    labelsPath = args.labels_folder_path
-    idsPath = args.ids_file_path
-    currentEpoch = args.epoch_num
-
-
-
-    current_experiment = 'no_edges_16dim'
-    currentEpoch = str(20)
     with torch.no_grad():
         run(current_experiment,currentEpoch, dataPath, labelsPath, idsPath)
 

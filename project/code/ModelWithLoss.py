@@ -7,11 +7,12 @@ class CompleteModel(nn.Module):
     def __init__(self,embeddingDim):
         super(CompleteModel,self).__init__()
         self.fe = FeatureExtractor(embeddingDim)
-        self.l = LossModule()
+        self.loss = LossModule()
+
     def forward(self, imgBatch,lblBatch,lblEdgBatch):
         features = self.fe(imgBatch)
         if self.training:
-            totLoss = self.l(features,lblBatch,lblEdgBatch)
+            totLoss = self.loss(features, lblBatch, lblEdgBatch)
         else:
             totLoss = None
         return features,totLoss

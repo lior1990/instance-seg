@@ -1,16 +1,17 @@
-from collections import OrderedDict
+import os
+import numpy as np
 
 from sklearn.manifold import TSNE
-import argparse
+from utils.argument_parser import validation_argument_parser
 import torch.autograd
-from costum_dataset import *
+from costum_dataset import CostumeDataset
 from torch.utils.data import DataLoader
-from evaluate import *
-from config import *
-from datetime import datetime
-import MetricLearningModel
+from torch.autograd import Variable
+from config import config_experiment, float_type
+from matplotlib import pyplot as plt
 
-import os
+
+from utils.model_loader import load_model_from_experiment
 
 
 def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
@@ -25,18 +26,8 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
     # Set up an experiment
     experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False,currentEpoch=currentEpoch)
 
-    fe = MetricLearningModel.FeatureExtractor(embedding_dim)
+    fe = load_model_from_experiment(experiment)
 
-    try:
-        fe.load_state_dict(experiment['fe_state_dict'])
-    except:
-        state_dict = OrderedDict()
-        prefix = 'module.'
-        for key,val in experiment['fe_state_dict'].items():
-            if key.startswith(prefix):
-                key = key[len(prefix):]
-            state_dict[key] = val
-        fe.load_state_dict(state_dict)
     if torch.cuda.is_available():
         print("Using CUDA")
         fe.cuda()
@@ -45,7 +36,7 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
     for i,batch in enumerate(dataloader):
         try:
             inputs = Variable(batch['image'].type(float_type))
-            features = fe(inputs)
+            features, _ = fe(inputs, None, None)
             features = features.cpu().numpy().squeeze()
             features = np.transpose(features, [1, 2, 0])  # transpose to (h,w,c)
 
@@ -79,36 +70,10 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
     return
 
 
-
-
 def main():
 
-    defaultExperimentName = 'exp_' + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    current_experiment, currentEpoch, dataPath, labelsPath, idsPath = validation_argument_parser()
 
-
-    # defaultDataPath = os.path.join('..', '..', 'COCO', 'train2017', '')
-    # defaultLabelsPath = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
-    # defaultIdsFile = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
-
-    defaultDataPath = os.path.join('..', '..', 'COCO', 'val2017', '')
-    defaultLabelsPath = os.path.join('..', '..', 'COCO', 'val2017labels', 'instance_labels', '')
-    defaultIdsFile = os.path.join('..', '..', 'COCO', 'val2017labels', 'images_ids.txt')
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--current_experiment', help='Experiment name', required=False, default=defaultExperimentName)
-    parser.add_argument('--epoch_num',help='Epoch number',required=False,default='latest')
-    parser.add_argument('--data_folder_path', required=False, default=defaultDataPath)
-    parser.add_argument('--labels_folder_path', required=False, default=defaultLabelsPath)
-    parser.add_argument('--ids_file_path', required=False, default=defaultIdsFile)
-
-    args = parser.parse_args()
-    current_experiment = args.current_experiment
-    dataPath = args.data_folder_path
-    labelsPath = args.labels_folder_path
-    idsPath = args.ids_file_path
-
-    current_experiment = 'exp2'
-    currentEpoch = str(18)
     with torch.no_grad():
         run(current_experiment, currentEpoch, dataPath, labelsPath, idsPath)
 

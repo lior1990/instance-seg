@@ -1,13 +1,14 @@
-from collections import OrderedDict
-
 import torch.autograd
-from costum_dataset import *
+import numpy as np
+from costum_dataset import CostumeDataset
 from torch.utils.data import DataLoader
 import torch.nn as nn
-from evaluate import *
+from torch.autograd import Variable
+from matplotlib import pyplot as plt
 from config import *
-from ModelWithLoss import CompleteModel
 import os
+
+from utils.model_loader import load_model_from_experiment
 
 
 def set_random_seed():
@@ -33,18 +34,8 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
     # Set up an experiment
     experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False)
 
-    fe = CompleteModel(embedding_dim)
+    fe = load_model_from_experiment(experiment)
 
-    try:
-        fe.load_state_dict(experiment['fe_state_dict'])
-    except:
-        state_dict = OrderedDict()
-        prefix = 'module.'
-        for key, val in experiment['fe_state_dict'].items():
-            if key.startswith(prefix):
-                key = key[len(prefix):]
-            state_dict[key] = val
-        fe.load_state_dict(state_dict)
     current_epoch = experiment['epoch']
     train_fe_loss_history = experiment['train_fe_loss']
 
