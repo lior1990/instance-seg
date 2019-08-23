@@ -3,16 +3,23 @@ from torch.autograd import Variable
 import config
 import torch
 
+
 def calcLoss(featuresBatch, labelsBatch, labelEdgesBatch):
     totalLoss = Variable(torch.Tensor([0]).type(config.double_type))
+    varLoss = Variable(torch.Tensor([0]).type(config.double_type))
+    distLoss = Variable(torch.Tensor([0]).type(config.double_type))
+    edgeLoss = Variable(torch.Tensor([0]).type(config.double_type))
+    regLoss = Variable(torch.Tensor([0]).type(config.double_type))
     batchSize = featuresBatch.shape[0]
     for sample in range(batchSize):
         clusterMeans, clusters = getClusters(featuresBatch[sample], labelsBatch[sample], labelEdgesBatch[sample])
-        totalLoss = totalLoss + config.lossParams.alpha * getVarLoss(clusterMeans, clusters)
-        totalLoss = totalLoss + config.lossParams.beta * getDistLoss(clusterMeans, clusters)
-        totalLoss = totalLoss + config.lossParams.gamma * getRegularizationLoss(clusterMeans)
-    totalLoss = totalLoss / batchSize
-    return totalLoss
+        varLoss = varLoss + config.lossParams.alpha * getVarLoss(clusterMeans, clusters)
+        distLoss = distLoss + config.lossParams.beta * getDistLoss(clusterMeans, clusters)
+        edgeLoss = edgeLoss + config.lossParams.gamma * getEdgesLoss(clusterMeans, clusters)
+        regLoss = regLoss + config.lossParams.delta * getRegularizationLoss(clusterMeans)
+
+    totalLoss = varLoss + distLoss + edgeLoss + regLoss
+    return totalLoss, varLoss, distLoss, edgeLoss, regLoss
 
 
 def getVarLoss(clusterMeans, clusters):
@@ -69,25 +76,33 @@ def getDistLoss(clusterMeans, clusters):
                 2 * config.lossParams.dd - torch.norm(clusterAMean - clusterBMean, p=config.lossParams.norm)
             ) ** 2
 
-
-    if config.lossParams.objectEdgeContributeToLoss:
-        for cA in range(N):
-            clusterAEdges = clusters[cA][1]
-            for cB in range(cA+1,N):
-                clusterBEdges = clusters[cB][1]
-                clusterAEdgesRepeated = clusterAEdges.repeat(clusterBEdges.shape[0], 1)
-                clusterBEdgesRepeated = clusterBEdges.repeat(1, clusterAEdges.shape[0]).view(
-                    clusterAEdgesRepeated.shape[0],
-                    -1)
-                # making sure that that the edges of each instance are at least 2(dd-dv) apart
-                distLoss = distLoss + torch.sum(torch.relu(
-                    2 * (config.lossParams.dd - config.lossParams.dv) - torch.norm(clusterAEdgesRepeated - clusterBEdgesRepeated,
-                                                                     p=config.lossParams.norm, dim=1)) ** 2) / \
-                           clusterAEdgesRepeated.shape[0]
-
-
     distLoss = distLoss / (N * (N - 1))
     return distLoss
+
+
+def getEdgesLoss(clusterMeans, clusters):
+    N = clusterMeans.shape[0]
+    edgeLoss = Variable(torch.Tensor([0])).type(config.double_type)
+    if N < 2 or not config.lossParams.objectEdgeContributeToLoss:
+        return edgeLoss
+
+    for cA in range(N):
+        clusterAEdges = clusters[cA][1]
+        for cB in range(cA + 1, N):
+            clusterBEdges = clusters[cB][1]
+            clusterAEdgesRepeated = clusterAEdges.repeat(clusterBEdges.shape[0], 1)
+            clusterBEdgesRepeated = clusterBEdges.repeat(1, clusterAEdges.shape[0]).view(
+                clusterAEdgesRepeated.shape[0],
+                -1)
+            # making sure that that the edges of each instance are at least 2(dd-dv) apart
+            edgeLoss = edgeLoss + torch.sum(torch.relu(
+                2 * (config.lossParams.dd - config.lossParams.dv) - torch.norm(
+                    clusterAEdgesRepeated - clusterBEdgesRepeated,
+                    p=config.lossParams.norm, dim=1)) ** 2) / \
+                       clusterAEdgesRepeated.shape[0]
+
+    edgeLoss = edgeLoss / (N * (N - 1))
+    return edgeLoss
 
 
 def getRegularizationLoss(clusterMeans):
@@ -137,10 +152,12 @@ def getClusters(features, labels, labelEdges):
         boundaryLocations = Variable(torch.LongTensor(np.where(labelEdges == instance)[0]).type(config.long_type))
         if boundaryLocations.shape[0] > config.lossParams.edgePixelsMaxNum:
             selectedBoundaries = Variable(
-                torch.LongTensor(config.lossParams.edgePixelsMaxNum).random_(0, boundaryLocations.shape[0]).type(config.long_type))
+                torch.LongTensor(config.lossParams.edgePixelsMaxNum).random_(0, boundaryLocations.shape[0]).type(
+                    config.long_type))
         else:
             selectedBoundaries = boundaryLocations
-        vectors = torch.index_select(features, dim=0, index=locations).type(config.double_type)  # all vectors of this instance
+        vectors = torch.index_select(features, dim=0, index=locations).type(
+            config.double_type)  # all vectors of this instance
         boundaryVectors = torch.index_select(features, dim=0, index=selectedBoundaries).type(
             config.double_type)  # all boundary vectors of this instance
         L.append((vectors, boundaryVectors))

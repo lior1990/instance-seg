@@ -8,16 +8,17 @@ PIXEL_BOUNDARY_VAL = 255
 
 # Hyper parameters
 embedding_dim = 32
-batch_size = 12
+batch_size = 5
 
 
 class LossParams:
     def __init__(self):
         self.alpha = 1
         self.beta = 1
+        self.gamma = 1
+        self.delta = 0.001
         self.objectEdgeContributeToLoss = False
         self.edgePixelsMaxNum = 200  # float('inf')
-        self.gamma = 0.001
         self.norm = 2
         self.dv = 2
         self.dd = 10
@@ -31,10 +32,13 @@ if torch.cuda.is_available() and torch.cuda.device_count() > 1:
 
 class TrainParams:
     def __init__(self):
-        self.learning_rate = 0.01
-        self.lr_decay = 0.95
+        self.learning_rate = 0.0001
+        self.learning_rate_factor = 0.1
+        self.learning_rate_patience = 5
+        self.optStepSize = 200
+        self.lossPlateuThreshold = 0.5
         self.max_epoch_num = 1001
-        self.saveModelIntervalEpochs = 5
+        self.saveModelIntervalEpochs = 10
 
 
 trainParams = TrainParams()

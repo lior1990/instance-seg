@@ -40,7 +40,7 @@ def run(current_experiment, currentEpoch, data_path, labels_path, ids_path):
         try:
             inputs = Variable(batch['image'].type(float_type))
             labels = batch['label'].cpu().numpy()
-            features, xxx = fe(inputs, None, None)
+            features, totLoss, varLoss, distLoss, edgeLoss, regLoss = fe(inputs, None, None)
             inputs = inputs.cpu().numpy().squeeze()
             features = features.cpu().numpy().squeeze()
             labels = labels.squeeze()
@@ -61,18 +61,18 @@ def main():
     # defaultLabelsPath = os.path.join('..', '..', 'COCO', 'val2017labels', 'instance_labels', '')
     # defaultIdsFile = os.path.join('..', '..', 'COCO', 'val2017labels', 'images_ids.txt')
 
-    defaultDataPath = os.path.join('..', '..', 'VOC2012', 'JPEGImages', '')
-    defaultLabelsPath = os.path.join('..', '..', 'VOC2012', 'SegmentationObject', '')
-    defaultIdsFile = os.path.join('..', '..', 'VOC2012','ImageSets','Segmentation', 'val.txt')
+    # defaultDataPath = os.path.join('..', '..', 'VOC2012', 'JPEGImages', '')
+    # defaultLabelsPath = os.path.join('..', '..', 'VOC2012', 'SegmentationObject', '')
+    # defaultIdsFile = os.path.join('..', '..', 'VOC2012', 'ImageSets', 'Segmentation', 'val.txt')
 
     # defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images', '')
     # defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'labels', '')
     # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images_ids.txt')
     # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'overfit.txt')
 
-    # defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'images', '')
-    # defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'labels', '')
-    # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'images_ids.txt')
+    defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'images', '')
+    defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'labels', '')
+    defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'images_ids.txt')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--current_experiment', help='Experiment name', required=False, default=defaultExperimentName)
@@ -89,7 +89,7 @@ def main():
     currentEpoch = args.epoch_num
 
     current_experiment = 'test'
-    currentEpoch = str(66)
+    currentEpoch = str(1001)
     with torch.no_grad():
         run(current_experiment, currentEpoch, dataPath, labelsPath, idsPath)
 
