@@ -1,10 +1,12 @@
 import torch.autograd
 from costum_dataset import *
 from torch.utils.data import DataLoader
-import torch.nn as nn
 from evaluate import *
 from config import *
 import os
+import matplotlib
+
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 
@@ -23,7 +25,7 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
     # Dataloader
     train_dataset = CostumeDataset(train_ids_path, train_data_folder_path, train_labels_folder_path,
                                    mode="train", img_h=224, img_w=224)
-    train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True, num_workers=8,
+    train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True, num_workers=4,
                                   worker_init_fn=worker_init_fn)
 
     # Set up an experiment
@@ -32,17 +34,6 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
         config_experiment(current_experiment, resume=True, useBest=False)
 
     exp_logger.info('training started/resumed at epoch ' + str(current_epoch))
-
-    if torch.cuda.is_available():
-        print("Using CUDA")
-        device = torch.device("cuda:0")
-        if torch.cuda.device_count() > 1:
-            print("Using CUDA with %s GPUs!" % torch.cuda.device_count())
-            fe = nn.DataParallel(fe)
-    else:
-        device = torch.device("cpu")
-
-    fe.to(device)
 
     for i in range(current_epoch, trainParams.max_epoch_num):
         running_fe_loss = 0
@@ -94,7 +85,6 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
                              'epoch': i + 1,
                              'train_fe_loss': train_fe_loss_history},
                             {'opt_state_dict': fe_opt.state_dict()},
-                            {'sched_state_dict': optScheduler.state_dict()},
                             current_experiment)
         # Plot and save loss history
         plt.plot(train_fe_loss_history, 'r')

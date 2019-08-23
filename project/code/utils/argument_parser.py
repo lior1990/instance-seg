@@ -7,16 +7,16 @@ def train_argument_parser():
     default_experiment_name = 'exp_' + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
     # default_train_data_path = os.path.join('..', '..', 'COCO', 'train2017', '')
-    default_train_data_path = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images', '')
+    default_train_data_path = os.path.join('..', '..', 'cvppp', 'all_plants', 'train1', 'images', '')
 
     # default_train_labels_path = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
-    default_train_labels_path = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'labels', '')
+    default_train_labels_path = os.path.join('..', '..', 'cvppp', 'all_plants', 'train1', 'labels', '')
 
     # default_train_ids_file = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
-    default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images_ids.txt')
+    default_train_ids_file = os.path.join('..', '..', 'cvppp', 'all_plants', 'train1', 'images_ids.txt')
 
     # default_train_ids_file = os.path.join('..', '..', 'COCO', 'overfit.txt')
-    default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'overfit.txt')
+    # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'overfit.txt')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--current_experiment', help='Experiment name', required=False, default=default_experiment_name)

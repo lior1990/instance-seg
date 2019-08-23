@@ -1,15 +1,13 @@
 from collections import OrderedDict
 
 from ModelWithLoss import CompleteModel
-from config import embedding_dim
+import config
+import torch.nn as nn
 from optimizer import *
 
 
-def loadAll(modelChkpt, optimizerChkpt, optimizerSchedulerChkpt):
-    model = CompleteModel(embedding_dim)
-    optimizer = getOptimizer(model)
-    scheduler = getOptimizerScheduler(optimizer)
-
+def loadAll(modelChkpt, optimizerChkpt, lastEpochTrained):
+    model = CompleteModel(config.embedding_dim)
     if modelChkpt is not None:
         try:
             model.load_state_dict(modelChkpt['fe_state_dict'])
@@ -21,7 +19,19 @@ def loadAll(modelChkpt, optimizerChkpt, optimizerSchedulerChkpt):
                     key = key[len(prefix):]
                 state_dict[key] = val
             model.load_state_dict(state_dict)
-        optimizer = getOptimizer(model)
+
+    if torch.cuda.is_available():
+        print("Using CUDA")
+        device = torch.device("cuda:0")
+        if torch.cuda.device_count() > 1:
+            print("Using CUDA with %s GPUs!" % torch.cuda.device_count())
+            model = nn.DataParallel(model)
+    else:
+        device = torch.device("cpu")
+
+    model.to(device)
+
+    optimizer = getOptimizer(model)
 
     if optimizerChkpt is not None:
         try:
@@ -29,13 +39,7 @@ def loadAll(modelChkpt, optimizerChkpt, optimizerSchedulerChkpt):
         except:
             print('failed to load optimizer state dict!!!!!!!!!!!!!')
             pass
-        scheduler = getOptimizerScheduler(optimizer)
 
-    if optimizerSchedulerChkpt is not None:
-        try:
-            scheduler.load_state_dict(optimizerSchedulerChkpt['sched_state_dict'])
-        except:
-            print('failed to load optimizer scheduler state dict!!!!!!!!!!!!!')
-            pass
+    scheduler = getOptimizerScheduler(optimizer, lastEpochTrained)
 
     return model, optimizer, scheduler

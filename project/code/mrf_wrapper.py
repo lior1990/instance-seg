@@ -1,5 +1,7 @@
 import numpy as np
-from imageio import imsave, imread
+
+from scipy.misc import imsave, imread
+# from imageio import imsave, imread
 
 from mrf import denoise_image
 

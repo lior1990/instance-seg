@@ -8,7 +8,7 @@ PIXEL_BOUNDARY_VAL = 255
 
 # Hyper parameters
 embedding_dim = 32
-batch_size = 5
+batch_size = 10
 
 
 class LossParams:
@@ -63,7 +63,6 @@ else:
 def config_experiment(name, resume=True, useBest=False, currentEpoch='latest'):
     exp = None
     optParams = None
-    optSchedulerParams = None
     epoch = 0
     lossHistory = []
     try:
@@ -76,11 +75,9 @@ def config_experiment(name, resume=True, useBest=False, currentEpoch='latest'):
         if useBest:
             exp_path = os.path.join(chkpts_dir, name, 'best.pth')
             opt_path = os.path.join(chkpts_dir, name, 'opt_best.pth')
-            opt_scheduler_path = os.path.join(chkpts_dir, name, 'opt_sched_best.pth')
         else:
             exp_path = os.path.join(chkpts_dir, name, 'chkpt_' + currentEpoch + '.pth')
             opt_path = os.path.join(chkpts_dir, name, 'opt_chkpt_' + currentEpoch + '.pth')
-            opt_scheduler_path = os.path.join(chkpts_dir, name, 'opt_sched_chkpt_' + currentEpoch + '.pth')
 
         try:
             exp = torch.load(exp_path, map_location=lambda storage, loc: storage)
@@ -96,39 +93,27 @@ def config_experiment(name, resume=True, useBest=False, currentEpoch='latest'):
         except:
             logger.warning('optimizer params for checkpoint does not exist. creating new optimizer')
 
-        try:
-            optSchedulerParams = torch.load(opt_scheduler_path, map_location=lambda storage, loc: storage)
-            logger.info('loading optimizer scheduler state, experiment: ' + name)
-        except:
-            logger.warning('optimizer scheduler params for checkpoint does not exist. creating new optimizer scheduler')
-
-    model, optimizer, optimizerScheduler = loadAll(exp, optParams, optSchedulerParams)
+    model, optimizer, optimizerScheduler = loadAll(exp, optParams,epoch)
 
     return model, optimizer, optimizerScheduler, logger, epoch, lossHistory
 
 
-def save_experiment(exp, opt, sched, name, isBest=False):
+def save_experiment(exp, opt, name, isBest=False):
     exp_path = os.path.join(chkpts_dir, name, "chkpt_" + str(exp['epoch']) + ".pth")
     opt_path = os.path.join(chkpts_dir, name, "opt_chkpt_" + str(exp['epoch']) + ".pth")
-    opt_sched_path = os.path.join(chkpts_dir, name, "opt_sched_chkpt_" + str(exp['epoch']) + ".pth")
     torch.save(exp, exp_path)
     torch.save(opt, opt_path)
-    torch.save(sched, opt_sched_path)
 
     exp_path = os.path.join(chkpts_dir, name, "chkpt_latest.pth")
     opt_path = os.path.join(chkpts_dir, name, "opt_chkpt_latest.pth")
-    opt_sched_path = os.path.join(chkpts_dir, name, "opt_sched_chkpt_latest.pth")
     torch.save(exp, exp_path)
     torch.save(opt, opt_path)
-    torch.save(sched, opt_sched_path)
 
     if isBest:
         best_exp_path = os.path.join(chkpts_dir, name, "best.pth")
         best_opt_path = os.path.join(chkpts_dir, name, "opt_best.pth")
-        best_opt_sched_path = os.path.join(chkpts_dir, name, "opt_sched_best.pth")
         torch.save(exp, best_exp_path)
         torch.save(opt, best_opt_path)
-        torch.save(sched, best_opt_sched_path)
 
 
 def config_logger(current_exp):
