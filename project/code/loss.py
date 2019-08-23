@@ -3,8 +3,7 @@ from torch.autograd import Variable
 import config
 import torch
 
-
-def calcLoss(featuresBatch, labelsBatch, labelEdgesBatch):
+def calcLoss(featuresBatch, labelsBatch):
     totalLoss = Variable(torch.Tensor([0]).type(config.double_type))
     varLoss = Variable(torch.Tensor([0]).type(config.double_type))
     distLoss = Variable(torch.Tensor([0]).type(config.double_type))
@@ -12,10 +11,10 @@ def calcLoss(featuresBatch, labelsBatch, labelEdgesBatch):
     regLoss = Variable(torch.Tensor([0]).type(config.double_type))
     batchSize = featuresBatch.shape[0]
     for sample in range(batchSize):
-        clusterMeans, clusters = getClusters(featuresBatch[sample], labelsBatch[sample], labelEdgesBatch[sample])
+        clusterMeans, clusters = getClusters(featuresBatch[sample], labelsBatch[sample])
         varLoss = varLoss + config.lossParams.alpha * getVarLoss(clusterMeans, clusters)
         distLoss = distLoss + config.lossParams.beta * getDistLoss(clusterMeans, clusters)
-        edgeLoss = edgeLoss + config.lossParams.gamma * getEdgesLoss(clusterMeans, clusters)
+        # edgeLoss = edgeLoss + config.lossParams.gamma * getEdgesLoss(clusterMeans, clusters)
         regLoss = regLoss + config.lossParams.delta * getRegularizationLoss(clusterMeans)
 
     totalLoss = varLoss + distLoss + edgeLoss + regLoss
@@ -67,13 +66,16 @@ def getDistLoss(clusterMeans, clusters):
     distLoss = Variable(torch.Tensor([0])).type(config.double_type)
     if N < 2:
         return distLoss
+
+    delta_d = config.lossParams.dd * 1
+
     for cA in range(N):
         clusterAMean = clusterMeans[cA]
         for cB in range(cA + 1, N):
             clusterBMean = clusterMeans[cB]
             # making sure that the clusters centers are far from each other by at least 2*dd
             distLoss = distLoss + torch.relu(
-                2 * config.lossParams.dd - torch.norm(clusterAMean - clusterBMean, p=config.lossParams.norm)
+                2 * delta_d - torch.norm(clusterAMean - clusterBMean, p=config.lossParams.norm)
             ) ** 2
 
     distLoss = distLoss / (N * (N - 1))
@@ -116,7 +118,7 @@ def getRegularizationLoss(clusterMeans):
     return regLoss
 
 
-def getClusters(features, labels, labelEdges):
+def getClusters(features, labels):
     """
     This function performs clustering on the input features according to the true labels
     :param features: an (C,h,w) Tensor as outputted from the feature extractor
@@ -138,8 +140,11 @@ def getClusters(features, labels, labelEdges):
     L = list()
     means = list()
 
+    label_edges, label_centers = get_weighted_pixels_from_label(labels)
     labels = labels.flatten()
-    labelEdges = labelEdges.flatten()
+    label_edges = label_edges.flatten()
+    label_centers = label_centers.flatten()
+
     features = features.permute(1, 2, 0).contiguous()
     shape = features.size()
     features = features.view(shape[0] * shape[1], shape[2])
@@ -149,19 +154,65 @@ def getClusters(features, labels, labelEdges):
         if instance == config.PIXEL_IGNORE_VAL:
             continue  # skip boundry for VOC
         locations = Variable(torch.LongTensor(np.where(labels == instance)[0]).type(config.long_type))
-        boundaryLocations = Variable(torch.LongTensor(np.where(labelEdges == instance)[0]).type(config.long_type))
-        if boundaryLocations.shape[0] > config.lossParams.edgePixelsMaxNum:
-            selectedBoundaries = Variable(
-                torch.LongTensor(config.lossParams.edgePixelsMaxNum).random_(0, boundaryLocations.shape[0]).type(
-                    config.long_type))
+        label_edges_locations = Variable(torch.LongTensor(np.where(label_edges == instance)[0]).type(config.long_type))
+        label_centers_locations = Variable(torch.LongTensor(np.where(label_centers == instance)[0]).type(config.long_type))
+
+        vectors = torch.index_select(features, dim=0, index=locations).type(config.double_type)  # all vectors of this instance
+        label_edges_vectors = torch.index_select(features, dim=0, index=label_edges_locations).type(config.double_type)  # all vectors of this instance
+        label_centers_vectors = torch.index_select(features, dim=0, index=label_centers_locations).type(config.double_type)  # all vectors of this instance
+
+        L.append((vectors, None))
+        if instance == 0:
+            means.append(torch.mean(vectors, dim=0))
         else:
-            selectedBoundaries = boundaryLocations
-        vectors = torch.index_select(features, dim=0, index=locations).type(
-            config.double_type)  # all vectors of this instance
-        boundaryVectors = torch.index_select(features, dim=0, index=selectedBoundaries).type(
-            config.double_type)  # all boundary vectors of this instance
-        L.append((vectors, boundaryVectors))
-        means.append(torch.mean(vectors, dim=0))
+            number_of_pixels = len(vectors)
+            centers_vectors_torch = torch.cat([label_centers_vectors] * int(np.ceil(0.1*number_of_pixels)))
+            edges_vectors_torch = torch.cat([label_edges_vectors] * int(np.ceil(0.25*number_of_pixels)))
+
+            means.append(torch.mean(torch.cat([vectors,
+                                               centers_vectors_torch,
+                                               edges_vectors_torch
+                                               ]), dim=0))
     T = (torch.stack(means), L)
 
     return T
+
+
+def get_weighted_pixels_from_label(label):
+    label_edges = np.full(label.shape, config.PIXEL_IGNORE_VAL)
+    label_centers = np.full(label.shape, config.PIXEL_IGNORE_VAL)
+
+    instances = np.unique(label)
+    for instance in instances:
+        coords = _get_boundary_pixels(label, instance)
+        for x, y in coords:
+            label_edges[x][y] = instance
+
+        center = _get_center(label, instance)
+        label_centers[center[0]][center[1]] = instance
+
+    return label_edges, label_centers
+
+
+def _get_boundary_pixels(label, instance):
+    coords = list()
+
+    instance_pixels_coords = np.where(label == instance)
+    top_x = np.argmax(instance_pixels_coords[0])
+    bottom_x = np.argmin(instance_pixels_coords[0])
+
+    top_y = np.argmax(instance_pixels_coords[1])
+    bottom_y = np.argmin(instance_pixels_coords[1])
+
+    coords.append((instance_pixels_coords[0][top_x], instance_pixels_coords[1][top_x]))
+    coords.append((instance_pixels_coords[0][bottom_x], instance_pixels_coords[1][bottom_x]))
+    coords.append((instance_pixels_coords[0][top_y], instance_pixels_coords[1][top_y]))
+    coords.append((instance_pixels_coords[0][bottom_y], instance_pixels_coords[1][bottom_y]))
+
+    return coords
+
+
+def _get_center(label, instance):
+    points = np.argwhere(label == instance)
+    center = points.mean(axis=0)
+    return center.astype(int)

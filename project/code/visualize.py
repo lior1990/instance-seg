@@ -77,9 +77,9 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
         try:
             inputs = Variable(batch['image'].type(float_type))
             labels = batch['label'].cpu().numpy()
-            features,xxx = fe(inputs,None,None)
+            features, _ = fe(inputs,None)
             inputs = inputs.cpu().numpy().squeeze()
-            features  = features.cpu().numpy().squeeze()
+            features = features.cpu().numpy().squeeze()
             labels = labels.squeeze()
             visualize(inputs,labels,features,current_experiment,i)
         except:

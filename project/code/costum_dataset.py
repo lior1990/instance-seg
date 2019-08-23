@@ -66,13 +66,27 @@ class CostumeDataset(Dataset):
         img = self.data_transforms["img"](img)
         label = self.data_transforms["label"](label)
 
-        labelEdges = label.copy()
-        for w in range(self.w):
-            for h in range(self.h):
-                if not self.__isBoundaryPixel(w, h, label):
-                    labelEdges[w, h] = PIXEL_IGNORE_VAL  # this is special value to ignore
+        # labelEdges = np.full(label.shape, PIXEL_IGNORE_VAL)
+        # label_centers = np.full(label.shape, PIXEL_IGNORE_VAL)
+        #
+        # instances = np.unique(label)
+        # for instance in instances:
+        #     coords = self._get_boundary_pixels(label, instance)
+        #     for x, y in coords:
+        #         labelEdges[x][y] = instance
+        #
+        #     center = self._get_center(label, instance)
+        #     label_centers[center[0]][center[1]] = instance
 
-        return {'image': img, 'label': label, 'labelEdges': labelEdges, 'size': size}
+        # labelEdges = label.copy()
+        # for w in range(self.w):
+        #     for h in range(self.h):
+        #         if not self.__isBoundaryPixel(w,h,label):
+        #             labelEdges[w,h] = PIXEL_IGNORE_VAL # this is special value to ignore
+
+        return {'image': img,
+                'label': label,
+                'size': size}
 
     def __isBoundaryPixel(self, w, h, labelIm):
         pixelVal = labelIm[w, h]

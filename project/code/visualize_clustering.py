@@ -32,7 +32,8 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
         fe.cuda()
 
     fe.eval()
-    for i,batch in enumerate(dataloader):
+
+    for (i, batch), picture_id in zip(enumerate(dataloader), dataset.ids):
         try:
             inputs = Variable(batch['image'].type(float_type))
             features, _ = fe(inputs, None, None)
@@ -61,16 +62,15 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
             for idx, instance in enumerate(instances):
                 plt.scatter(features_2d[flat_labels == instance, 0], features_2d[flat_labels == instance, 1], c=colors[idx], label=instance)
             plt.legend()
-            plt.savefig(os.path.join('cluster_visualizations', current_experiment, "%s.png" % i))
+            plt.savefig(os.path.join('cluster_visualizations', current_experiment, "%s.png" % picture_id))
             plt.close()
-            print("Done %s" % i)
-        except:
-            continue
+            print("Done %s" % picture_id)
+        except Exception as e:
+            print("Got exception: %s on image: %s" % (e, picture_id))
     return
 
 
 def main():
-
     current_experiment, currentEpoch, dataPath, labelsPath, idsPath = validation_argument_parser()
 
     with torch.no_grad():

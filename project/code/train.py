@@ -1,3 +1,7 @@
+import matplotlib
+
+matplotlib.use('Agg')
+
 import torch.autograd
 from costum_dataset import *
 from torch.utils.data import DataLoader
@@ -39,20 +43,17 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
         running_fe_loss = 0
         running_var_loss = 0
         running_dist_loss = 0
-        running_edge_loss = 0
         running_reg_loss = 0
         optScheduler.step()
         exp_logger.info('epoch: ' + str(i) + ' LR: ' + str(optScheduler.get_lr()))
         for batch_num, batch in enumerate(train_dataloader):
             inputs = Variable(batch['image'].type(float_type))
             labels = batch['label'].cpu().numpy()
-            labelEdges = batch['labelEdges'].cpu().numpy()
             fe_opt.zero_grad()
-            features, totLoss, varLoss, distLoss, edgeLoss, regLoss = fe(inputs, labels, labelEdges)
+            features, totLoss, varLoss, distLoss, edgeLoss, regLoss = fe(inputs, labels)
             totalLoss = totLoss.sum() / batch_size
             varianceLoss = varLoss.sum() / batch_size
             distanceLoss = distLoss.sum() / batch_size
-            edgeToEdgeLoss = edgeLoss.sum() / batch_size
             regularizationLoss = regLoss.sum() / batch_size
             totalLoss.backward()
             fe_opt.step()
@@ -60,19 +61,16 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
             np_fe_loss = totalLoss.cpu().item()
             np_var_loss = varianceLoss.cpu().item()
             np_dist_loss = distanceLoss.cpu().item()
-            np_edge_loss = edgeToEdgeLoss.cpu().item()
             np_reg_loss = regularizationLoss.cpu().item()
 
             running_fe_loss += np_fe_loss
             running_var_loss += np_var_loss
             running_dist_loss += np_dist_loss
-            running_edge_loss += np_edge_loss
             running_reg_loss += np_reg_loss
             exp_logger.info('epoch: ' + str(i) + ', batch number: ' + str(batch_num) +
                             ', loss: ' + "{0:.2f}".format(np_fe_loss) +
                             ', var loss: ' + '{0:.2f}'.format(np_var_loss) +
                             ', dist loss: ' + '{0:.2f}'.format(np_dist_loss) +
-                            ', edge loss: ' + '{0:.2f}'.format(np_edge_loss) +
                             ', reg loss: ' + '{0:.2f}'.format(np_reg_loss))
 
         train_fe_loss = running_fe_loss / (batch_num + 1)

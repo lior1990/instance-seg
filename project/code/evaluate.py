@@ -23,10 +23,9 @@ def evaluate_model(model, dataloader):
     for i, batch in enumerate(dataloader):
         inputs = Variable(batch['image'].type(float_type))
         labels = batch['label'].cpu().numpy()
-        label_edges = batch['labelEdges'].cpu().numpy()
 
-        features, _ = model(inputs, None, None)
-        losses = model.loss(features, labels, label_edges)
+        features, _ = model(inputs, None)
+        losses = model.loss(features, labels)
         current_loss = losses.mean()
 
         np_features = features.data.cpu().numpy()

@@ -12,10 +12,10 @@ class CompleteModel(nn.Module):
         self.l = LossModule()
         # self.type(config.double_type)
 
-    def forward(self, imgBatch, lblBatch, lblEdgBatch):
+    def forward(self, imgBatch, lblBatch):
         features = self.fe(imgBatch)
         if self.training:
-            totLoss, varLoss, distLoss, edgeLoss, regLoss = self.l(features, lblBatch, lblEdgBatch)
+            totLoss, varLoss, distLoss, edgeLoss, regLoss = self.l(features, lblBatch)
         else:
             totLoss = None
             varLoss = None
