@@ -7,8 +7,6 @@ from config import *
 from evaluation_metrics.evaluator import Evaluator
 from torch.utils.data import DataLoader
 
-from utils.model_loader import load_model_from_experiment
-
 
 @torch.no_grad()
 def evaluate_model(model, dataloader):
@@ -38,7 +36,7 @@ def evaluate_model(model, dataloader):
 
         running_loss += current_loss.cpu().item()
 
-    loss = running_loss / (i+1)
+    loss = running_loss / (i + 1)
     average_evaluation_results = evaluator.get_average_results()
 
     return loss, average_evaluation_results
@@ -49,9 +47,8 @@ def evaluate(current_experiment, currentEpoch, data_path, labels_path, ids_path)
     dataloader = DataLoader(dataset)
 
     # Set up an experiment
-    experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False,currentEpoch=currentEpoch)
-
-    model = load_model_from_experiment(experiment)
+    model, optimizer, optimizerScheduler, logger, epoch, lossHistory = \
+        config_experiment(current_experiment, resume=True, useBest=False, currentEpoch=currentEpoch)
 
     if torch.cuda.is_available():
         print("Using CUDA")

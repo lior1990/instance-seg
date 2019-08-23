@@ -1,6 +1,6 @@
 import logging
 import os
-from ModelWithLoss import CompleteModel
+from utils.model_loader import loadAll
 import torch
 
 PIXEL_IGNORE_VAL = 255
@@ -32,11 +32,13 @@ if torch.cuda.is_available() and torch.cuda.device_count() > 1:
 
 class TrainParams:
     def __init__(self):
-        self.learning_rate = 0.0001
+        self.maxLR = 1e-4
+        self.minLR = 1e-6
+        self.momentum = 0.9
+        self.useNesterov = True
         self.learning_rate_factor = 0.1
-        self.learning_rate_patience = 5
         self.optStepSize = 200
-        self.lossPlateuThreshold = 0.5
+        self.optHalfCycle = 50
         self.max_epoch_num = 1001
         self.saveModelIntervalEpochs = 10
 
@@ -59,8 +61,11 @@ else:
 
 
 def config_experiment(name, resume=True, useBest=False, currentEpoch='latest'):
-    exp = {}
-    optParams = {}
+    exp = None
+    optParams = None
+    optSchedulerParams = None
+    epoch = 0
+    lossHistory = []
     try:
         os.makedirs(os.path.join(chkpts_dir, name))
     except:
@@ -71,47 +76,59 @@ def config_experiment(name, resume=True, useBest=False, currentEpoch='latest'):
         if useBest:
             exp_path = os.path.join(chkpts_dir, name, 'best.pth')
             opt_path = os.path.join(chkpts_dir, name, 'opt_best.pth')
+            opt_scheduler_path = os.path.join(chkpts_dir, name, 'opt_sched_best.pth')
         else:
             exp_path = os.path.join(chkpts_dir, name, 'chkpt_' + currentEpoch + '.pth')
             opt_path = os.path.join(chkpts_dir, name, 'opt_chkpt_' + currentEpoch + '.pth')
+            opt_scheduler_path = os.path.join(chkpts_dir, name, 'opt_sched_chkpt_' + currentEpoch + '.pth')
 
         try:
             exp = torch.load(exp_path, map_location=lambda storage, loc: storage)
             logger.info("loading checkpoint, experiment: " + name)
+            epoch = exp['epoch']
+            lossHistory = exp['train_fe_loss']
         except:
             logger.warning('checkpoint does not exist. creating new experiment')
-            fe = CompleteModel(embedding_dim)
-            exp['epoch'] = 0
-            exp['fe_state_dict'] = fe.state_dict()
-            exp['train_fe_loss'] = []
 
         try:
             optParams = torch.load(opt_path, map_location=lambda storage, loc: storage)
             logger.info('loading optimizer state, experiment: ' + name)
         except:
             logger.warning('optimizer params for checkpoint does not exist. creating new optimizer')
-            fe = CompleteModel(embedding_dim)
-            opt = torch.optim.SGD(filter(lambda p: p.requires_grad, fe.parameters()), lr=trainParams.learning_rate,
-                                  momentum=0.9, nesterov=True)
-            optParams['opt_state_dict'] = opt.state_dict()
 
-    return exp, optParams, logger
+        try:
+            optSchedulerParams = torch.load(opt_scheduler_path, map_location=lambda storage, loc: storage)
+            logger.info('loading optimizer scheduler state, experiment: ' + name)
+        except:
+            logger.warning('optimizer scheduler params for checkpoint does not exist. creating new optimizer scheduler')
+
+    model, optimizer, optimizerScheduler = loadAll(exp, optParams, optSchedulerParams)
+
+    return model, optimizer, optimizerScheduler, logger, epoch, lossHistory
 
 
-def save_experiment(exp, opt, name, isBest=False):
+def save_experiment(exp, opt, sched, name, isBest=False):
     exp_path = os.path.join(chkpts_dir, name, "chkpt_" + str(exp['epoch']) + ".pth")
     opt_path = os.path.join(chkpts_dir, name, "opt_chkpt_" + str(exp['epoch']) + ".pth")
+    opt_sched_path = os.path.join(chkpts_dir, name, "opt_sched_chkpt_" + str(exp['epoch']) + ".pth")
     torch.save(exp, exp_path)
     torch.save(opt, opt_path)
+    torch.save(sched, opt_sched_path)
+
     exp_path = os.path.join(chkpts_dir, name, "chkpt_latest.pth")
     opt_path = os.path.join(chkpts_dir, name, "opt_chkpt_latest.pth")
+    opt_sched_path = os.path.join(chkpts_dir, name, "opt_sched_chkpt_latest.pth")
     torch.save(exp, exp_path)
     torch.save(opt, opt_path)
+    torch.save(sched, opt_sched_path)
+
     if isBest:
         best_exp_path = os.path.join(chkpts_dir, name, "best.pth")
         best_opt_path = os.path.join(chkpts_dir, name, "opt_best.pth")
+        best_opt_sched_path = os.path.join(chkpts_dir, name, "opt_sched_best.pth")
         torch.save(exp, best_exp_path)
         torch.save(opt, best_opt_path)
+        torch.save(sched, best_opt_sched_path)
 
 
 def config_logger(current_exp):

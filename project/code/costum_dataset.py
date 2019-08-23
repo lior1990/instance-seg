@@ -32,7 +32,7 @@ class CostumeDataset(Dataset):
         self.mode = mode
 
         self.data_transforms = {
-            "default":  transforms.Compose([
+            "default": transforms.Compose([
                 ResizeSample(self.h, self.w)]
             ),
             "augmentation": augmentation_func,
@@ -55,8 +55,8 @@ class CostumeDataset(Dataset):
 
         size = label.size
 
-        img = self.data_transforms["default"]((img,False))
-        label = self.data_transforms["default"]((label,True))
+        img = self.data_transforms["default"]((img, False))
+        label = self.data_transforms["default"]((label, True))
 
         if self.mode == "train":
             augmentation = self.data_transforms["augmentation"]
@@ -69,41 +69,42 @@ class CostumeDataset(Dataset):
         labelEdges = label.copy()
         for w in range(self.w):
             for h in range(self.h):
-                if not self.__isBoundaryPixel(w,h,label):
-                    labelEdges[w,h] = PIXEL_IGNORE_VAL # this is special value to ignore
+                if not self.__isBoundaryPixel(w, h, label):
+                    labelEdges[w, h] = PIXEL_IGNORE_VAL  # this is special value to ignore
 
-        return {'image': img, 'label': label,'labelEdges':labelEdges, 'size': size}
+        return {'image': img, 'label': label, 'labelEdges': labelEdges, 'size': size}
 
-    def __isBoundaryPixel(self,w,h,labelIm):
-        pixelVal = labelIm[w,h]
-        if pixelVal==PIXEL_IGNORE_VAL or pixelVal==PIXEL_BOUNDARY_VAL:
+    def __isBoundaryPixel(self, w, h, labelIm):
+        pixelVal = labelIm[w, h]
+        if pixelVal == PIXEL_IGNORE_VAL or pixelVal == PIXEL_BOUNDARY_VAL:
             return False
         labelShape = labelIm.shape
-        if h>0: # not the top row
-            if pixelVal != labelIm[w,h-1]:
+        if h > 0:  # not the top row
+            if pixelVal != labelIm[w, h - 1]:
                 return True
-        if h<labelShape[1]-1: # not the bottom row
-            if pixelVal != labelIm[w,h+1]:
+        if h < labelShape[1] - 1:  # not the bottom row
+            if pixelVal != labelIm[w, h + 1]:
                 return True
-        if w>0: # not the most left column
-            if pixelVal != labelIm[w-1,h]:
+        if w > 0:  # not the most left column
+            if pixelVal != labelIm[w - 1, h]:
                 return True
-        if w<labelShape[0]-1: # not the most right column
-            if pixelVal != labelIm[w+1,h]:
+        if w < labelShape[0] - 1:  # not the most right column
+            if pixelVal != labelIm[w + 1, h]:
                 return True
-        if h>0 and w>0: # not in the top row and not in the left most column
-            if pixelVal != labelIm[w-1,h-1]:
+        if h > 0 and w > 0:  # not in the top row and not in the left most column
+            if pixelVal != labelIm[w - 1, h - 1]:
                 return True
-        if h>0 and w<labelShape[0]-1: # not in the top row and not in the right most column
-            if pixelVal != labelIm[w+1,h-1]:
+        if h > 0 and w < labelShape[0] - 1:  # not in the top row and not in the right most column
+            if pixelVal != labelIm[w + 1, h - 1]:
                 return True
-        if h<labelShape[1]-1 and w>0: # not in the bottom row and not in the left most column
-            if pixelVal != labelIm[w-1,h+1]:
+        if h < labelShape[1] - 1 and w > 0:  # not in the bottom row and not in the left most column
+            if pixelVal != labelIm[w - 1, h + 1]:
                 return True
-        if h<labelShape[1]-1 and w<labelShape[0]-1: # not in the bottom row and not in the right most column
-            if pixelVal != labelIm[w+1,h+1]:
+        if h < labelShape[1] - 1 and w < labelShape[0] - 1:  # not in the bottom row and not in the right most column
+            if pixelVal != labelIm[w + 1, h + 1]:
                 return True
         return False
+
 
 class ResizeSample(object):
     '''
@@ -144,7 +145,7 @@ class ResizeSample(object):
         if not isLabel:
             img = img.resize(new_size, im.ANTIALIAS)
         else:
-            img = img.resize(new_size, im.NEAREST) # for labels use NEAREST to avoid adding "new" labels
+            img = img.resize(new_size, im.NEAREST)  # for labels use NEAREST to avoid adding "new" labels
 
         img = center_crop(img)
 

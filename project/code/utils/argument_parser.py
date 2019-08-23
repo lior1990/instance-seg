@@ -62,6 +62,7 @@ def validation_argument_parser():
     parser.add_argument('--data_folder_path', required=False, default=defaultDataPath)
     parser.add_argument('--labels_folder_path', required=False, default=defaultLabelsPath)
     parser.add_argument('--ids_file_path', required=False, default=defaultIdsFile)
+    parser.add_argument('--GPUs', required=False, type=str)
 
     args = parser.parse_args()
     current_experiment = args.current_experiment
@@ -69,5 +70,6 @@ def validation_argument_parser():
     labelsPath = args.labels_folder_path
     idsPath = args.ids_file_path
     currentEpoch = args.epoch_num
+    GPUs = args.GPUs
 
-    return current_experiment, currentEpoch, dataPath, labelsPath, idsPath
+    return current_experiment, currentEpoch, dataPath, labelsPath, idsPath, GPUs

@@ -29,7 +29,7 @@ def predict_label(features, downsample_factor=1, min_cluster=10):
     # reduced_features = reduce(flat_features, 10)  # reduce dimension using PCA
     reduced_features = flat_features  # reduce dimension using PCA
     cluster_mask = cluster_features(reduced_features, min_cluster) # cluster with hDBSCAN
-    #cluster_mask = determine_background(flat_features, cluster_mask)
+    # cluster_mask = determine_background(flat_features, cluster_mask)
     predicted_label = np.reshape(cluster_mask, [h,w])
 
     predicted_label = denoise_colored_image(predicted_label)

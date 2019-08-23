@@ -11,7 +11,6 @@ from config import config_experiment, float_type
 from matplotlib import pyplot as plt
 
 
-from utils.model_loader import load_model_from_experiment
 
 
 def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):

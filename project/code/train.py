@@ -1,15 +1,11 @@
-from collections import OrderedDict
-
 import torch.autograd
 from costum_dataset import *
 from torch.utils.data import DataLoader
 import torch.nn as nn
 from evaluate import *
 from config import *
-from ModelWithLoss import CompleteModel
 import os
-
-from utils.model_loader import load_model_from_experiment
+from matplotlib import pyplot as plt
 
 
 def set_random_seed():
@@ -22,10 +18,8 @@ def worker_init_fn(worker_id):
     set_random_seed()
 
 
-set_random_seed()
-
-
 def run(current_experiment, train_data_folder_path, train_labels_folder_path, train_ids_path):
+    set_random_seed()
     # Dataloader
     train_dataset = CostumeDataset(train_ids_path, train_data_folder_path, train_labels_folder_path,
                                    mode="train", img_h=224, img_w=224)
@@ -33,25 +27,9 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
                                   worker_init_fn=worker_init_fn)
 
     # Set up an experiment
-    experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False)
 
-    fe = load_model_from_experiment(experiment)
-    experiment, optParams, exp_logger = config_experiment(current_experiment, resume=True, useBest=False)
-
-    fe = CompleteModel(embedding_dim)
-
-    try:
-        fe.load_state_dict(experiment['fe_state_dict'])
-    except:
-        state_dict = OrderedDict()
-        prefix = 'module.'
-        for key, val in experiment['fe_state_dict'].items():
-            if key.startswith(prefix):
-                key = key[len(prefix):]
-            state_dict[key] = val
-        fe.load_state_dict(state_dict)
-    current_epoch = experiment['epoch']
-    train_fe_loss_history = experiment['train_fe_loss']
+    fe, fe_opt, optScheduler, exp_logger, current_epoch, train_fe_loss_history = \
+        config_experiment(current_experiment, resume=True, useBest=False)
 
     exp_logger.info('training started/resumed at epoch ' + str(current_epoch))
 
@@ -66,23 +44,6 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
 
     fe.to(device)
 
-    fe_opt = torch.optim.SGD(filter(lambda p: p.requires_grad, fe.parameters()), lr=trainParams.learning_rate,
-                             momentum=0.9, nesterov=True)
-    try:
-        fe_opt.load_state_dict(optParams['opt_state_dict'])
-        print('loaded optimizer state')
-    except:
-        print('couldnt load optimizer state dict, using defaults')
-        fe_opt = torch.optim.SGD(filter(lambda p: p.requires_grad, fe.parameters()), lr=trainParams.learning_rate,
-                                 momentum=0.9, nesterov=True)
-
-
-    # optScheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=fe_opt,factor=trainParams.learning_rate_factor
-    #                                                           ,patience=trainParams.learning_rate_patience,
-    #                                                           threshold=trainParams.lossPlateuThreshold,
-    #                                                           verbose=True)
-    # optScheduler = torch.optim.lr_scheduler.StepLR(optimizer=fe_opt,step_size=200,gamma=0.1,last_epoch=-1)
-    optScheduler = torch.optim.lr_scheduler.CyclicLR(optimizer=fe_opt,base_lr=1e-6,max_lr=1e-4,step_size_up=50)
     for i in range(current_epoch, trainParams.max_epoch_num):
         running_fe_loss = 0
         running_var_loss = 0
@@ -133,6 +94,7 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
                              'epoch': i + 1,
                              'train_fe_loss': train_fe_loss_history},
                             {'opt_state_dict': fe_opt.state_dict()},
+                            {'sched_state_dict': optScheduler.state_dict()},
                             current_experiment)
         # Plot and save loss history
         plt.plot(train_fe_loss_history, 'r')

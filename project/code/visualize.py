@@ -6,13 +6,12 @@ matplotlib.use('Agg')
 
 import torch.autograd
 from imageio import imsave
+# from scipy.misc import imsave
 from matplotlib import pyplot as plt
 from costum_dataset import CostumeDataset
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from config import config_experiment, float_type
-from utils.argument_parser import validation_argument_parser
-from utils.model_loader import load_model_from_experiment
 from prediction import predict_label
 
 
@@ -66,9 +65,8 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
     dataloader = DataLoader(dataset)
 
     # Set up an experiment
-    experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False,currentEpoch=currentEpoch)
-
-    fe = load_model_from_experiment(experiment)
+    fe, optimizer, optimizerScheduler, logger, epoch, lossHistory = \
+        config_experiment(current_experiment, resume=True, useBest=False,currentEpoch=currentEpoch)
 
     if torch.cuda.is_available():
         print("Using CUDA")
@@ -87,14 +85,3 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
         except:
             continue
     return
-
-
-def main():
-    current_experiment, currentEpoch, dataPath, labelsPath, idsPath = validation_argument_parser()
-
-    with torch.no_grad():
-        run(current_experiment,currentEpoch, dataPath, labelsPath, idsPath)
-
-
-if __name__ == '__main__':
-    main()
