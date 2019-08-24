@@ -24,9 +24,10 @@ def evaluate_model(model, dataloader):
         inputs = Variable(batch['image'].type(float_type))
         labels = batch['label'].cpu().numpy()
 
-        features, _ = model(inputs, None)
-        losses = model.loss(features, labels)
-        current_loss = losses.mean()
+        results = model(inputs, None)
+        features = results[0]
+        totLoss, varLoss, distLoss, edgeLoss, regLoss = model.l(features, labels)
+        current_loss = totLoss.mean()
 
         np_features = features.data.cpu().numpy()
         for j, item in enumerate(np_features):
@@ -61,7 +62,7 @@ def evaluate(current_experiment, currentEpoch, data_path, labels_path, ids_path)
 
 
 def main():
-    current_experiment, currentEpoch, dataPath, labelsPath, idsPath = validation_argument_parser()
+    current_experiment, currentEpoch, dataPath, labelsPath, idsPath, _ = validation_argument_parser()
 
     with torch.no_grad():
         evaluate(current_experiment, currentEpoch, dataPath, labelsPath, idsPath)
