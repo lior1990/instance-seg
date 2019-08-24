@@ -50,7 +50,7 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
             inputs = Variable(batch['image'].type(float_type))
             labels = batch['label'].cpu().numpy()
             fe_opt.zero_grad()
-            features, totLoss, varLoss, distLoss, edgeLoss, regLoss = fe(inputs, labels)
+            features, totLoss, varLoss, distLoss, _, regLoss = fe(inputs, labels)
             totalLoss = totLoss.sum() / batch_size
             varianceLoss = varLoss.sum() / batch_size
             distanceLoss = distLoss.sum() / batch_size

@@ -167,7 +167,7 @@ def getClusters(features, labels):
         else:
             number_of_pixels = len(vectors)
             centers_vectors_torch = torch.cat([label_centers_vectors] * int(np.ceil(0.1*number_of_pixels)))
-            edges_vectors_torch = torch.cat([label_edges_vectors] * int(np.ceil(0.25*number_of_pixels)))
+            edges_vectors_torch = torch.cat([label_edges_vectors] * int(np.ceil(0.025*number_of_pixels)))
 
             means.append(torch.mean(torch.cat([vectors,
                                                centers_vectors_torch,
