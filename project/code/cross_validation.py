@@ -22,6 +22,10 @@ class CrossValidation(object):
              "gamma": [0.1, 0.001, 0.0001],
              "include_edges": [True, False]
              }
+        # the keys of this dict represents a feature params, that without being ON, their dict values has no meaning
+        self.features_params = {"include_edges": ["edges_max_pixels"],
+                                "include_weighted_mean": ["center_weight", "corners_weight"]
+                                }
         self._build_checkpoints_dir()
         self.logger = config_logger(self.experiment_name)
         metadata = self.load_experiment()
@@ -85,14 +89,39 @@ class CrossValidation(object):
         parameters_cartesian_product = self._cartesian_product(*[[{k: v} for v in self.params_search[k]] for k in self.params_search])
 
         execution_order = list()
+        sub_experiment_names = list()
 
         for pcp in parameters_cartesian_product:
             combined_dict = dict()
             for item in pcp:
                 combined_dict.update(item)
-            execution_order.append(combined_dict)
+
+            combined_dict = self._drop_irrelevant_params(combined_dict)
+            sub_exp_name = self._build_sub_experiment_name(combined_dict)
+
+            if sub_exp_name not in sub_experiment_names:
+                execution_order.append(combined_dict)
+                sub_experiment_names.append(sub_exp_name)
 
         return execution_order
+
+    def _drop_irrelevant_params(self, combined_dict):
+        """
+        This function drops irrelevant params from execution.
+        For example, if "include_edges" is False, and "edges_max_pixels" has [100, 200] values,
+        there's no point running an experiment with (False, 100) and (False, 200)
+        :param combined_dict:
+        :return:
+        """
+        for feature_param, dependent_params_list in self.features_params.items():
+            if feature_param in combined_dict:
+                if not combined_dict[feature_param]:
+                    for dependent_param in dependent_params_list:
+                        if dependent_param in combined_dict:
+                            combined_dict.pop(dependent_param)
+                            self.logger.debug("Dropped param: %s since %s is False!", dependent_param, feature_param)
+
+        return combined_dict
 
     def load_experiment(self):
         metadata_path = os.path.join(os.path.join(chkpts_dir, self.experiment_name, METADATA_NAME))
