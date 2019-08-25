@@ -11,15 +11,14 @@ from config import config_experiment, float_type
 from matplotlib import pyplot as plt
 
 
-
-
-def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
+def run(current_experiment,currentEpoch, data_set_params):
     try:
         os.makedirs(os.path.join('cluster_visualizations', current_experiment))
     except:
         pass
 
-    dataset = CostumeDataset(ids_path, data_path, labels_path, img_h=224, img_w=224)
+    dataset = CostumeDataset(data_set_params.ids_path, data_set_params.data_folder_path,
+                             data_set_params.labels_folder_path, img_h=224, img_w=224)
     dataloader = DataLoader(dataset)
 
     # Set up an experiment
@@ -71,10 +70,10 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
 
 def main():
 
-    current_experiment, currentEpoch, dataPath, labelsPath, idsPath = validation_argument_parser()
+    current_experiment, currentEpoch, data_set_params = validation_argument_parser()
 
     with torch.no_grad():
-        run(current_experiment, currentEpoch, dataPath, labelsPath, idsPath)
+        run(current_experiment, currentEpoch, data_set_params)
 
 
 if __name__ == '__main__':

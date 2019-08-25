@@ -41,8 +41,8 @@ def denoise_image(X, w_e, w_s):
             Y[i][j] = -1
         else:
             Y[i][j] = 1
-        if iter % 100000 == 0:
-            print('Completed', iter, 'iterations out of', max_iter)
+        # if iter % 100000 == 0:
+        #     print('Completed', iter, 'iterations out of', max_iter)
     return Y
 
 

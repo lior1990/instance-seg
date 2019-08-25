@@ -18,32 +18,34 @@ def evaluate_model(model, dataloader):
     '''
     evaluator = Evaluator()
 
-    running_loss = 0
+    # running_loss = 0
 
     for i, batch in enumerate(dataloader):
         inputs = Variable(batch['image'].type(float_type))
         labels = batch['label'].cpu().numpy()
-        label_edges = batch['labelEdges'].cpu().numpy()
+        # label_edges = batch['labelEdges'].cpu().numpy()
 
-        features, _ = model(inputs, None, None)
-        losses = model.loss(features, labels, label_edges)
-        current_loss = losses.mean()
+        results = model(inputs, None, None)
+        features = results[0]
+        # losses = model.loss(features, labels, label_edges)
+        # current_loss = losses.mean()
 
         np_features = features.data.cpu().numpy()
         for j, item in enumerate(np_features):
             pred = predict_label(item, downsample_factor=2)
             evaluator.evaluate(pred, labels[j])
 
-        running_loss += current_loss.cpu().item()
+        # running_loss += current_loss.cpu().item()
 
-    loss = running_loss / (i + 1)
+    # loss = running_loss / (i + 1)
     average_evaluation_results = evaluator.get_average_results()
 
-    return loss, average_evaluation_results
+    return None, average_evaluation_results
 
 
-def evaluate(current_experiment, currentEpoch, data_path, labels_path, ids_path):
-    dataset = CostumeDataset(ids_path, data_path, labels_path, img_h=224, img_w=224)
+def evaluate(current_experiment, currentEpoch, data_set_params):
+    dataset = CostumeDataset(data_set_params.ids_path, data_set_params.data_folder_path,
+                             data_set_params.labels_folder_path, img_h=224, img_w=224)
     dataloader = DataLoader(dataset)
 
     # Set up an experiment
@@ -62,10 +64,10 @@ def evaluate(current_experiment, currentEpoch, data_path, labels_path, ids_path)
 
 
 def main():
-    current_experiment, currentEpoch, dataPath, labelsPath, idsPath = validation_argument_parser()
+    current_experiment, currentEpoch, data_set_params = validation_argument_parser()
 
     with torch.no_grad():
-        evaluate(current_experiment, currentEpoch, dataPath, labelsPath, idsPath)
+        evaluate(current_experiment, currentEpoch, data_set_params)
 
 
 if __name__ == '__main__':

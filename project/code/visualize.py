@@ -59,9 +59,10 @@ def visualize(input, label, features, name, id):
     return
 
 
-def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
+def run(current_experiment, currentEpoch, data_set_params):
 
-    dataset = CostumeDataset(ids_path, data_path, labels_path, img_h=224, img_w=224)
+    dataset = CostumeDataset(data_set_params.ids_path, data_set_params.data_folder_path,
+                             data_set_params.labels_folder_path, img_h=224, img_w=224)
     dataloader = DataLoader(dataset)
 
     # Set up an experiment

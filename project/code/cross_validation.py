@@ -3,12 +3,11 @@ import pickle
 
 from config import chkpts_dir, config_logger
 from loss_params import LossParams
-from utils.objects import DataSetParams
 
 EXECUTION_ORDER = "execution_order"
 EXECUTION_COUNTER = "execution_counter"
 BEST_EXPERIMENT_INDEX = "best_experiment_index"
-MIN_LOSS = "min_loss"
+MAX_SCORE = "max_score"
 
 METADATA_NAME = "cv_metadata.pkl"
 
@@ -17,10 +16,13 @@ class CrossValidation(object):
     def __init__(self, experiment_name):
         self.experiment_name = experiment_name
         self.params_search = \
-            {"dv": [2, 3, 4],
-             "dd": [5, 10, 20],
-             "gamma": [0.1, 0.001, 0.0001],
-             "include_edges": [True, False]
+            {"alpha": [1, 2],
+             "dv": [0.1, 1],
+             "dd": [10, 20],
+             "include_edges": [False],
+             "include_weighted_mean": [True, False],
+             "corners_weight": [0.025, 0.25],
+             "center_weight": [0.1, 0.3]
              }
         # the keys of this dict represents a feature params, that without being ON, their dict values has no meaning
         self.features_params = {"include_edges": ["edges_max_pixels"],
@@ -34,20 +36,17 @@ class CrossValidation(object):
             self.execution_order = metadata[EXECUTION_ORDER]
             self.execution_counter = metadata[EXECUTION_COUNTER]
             self.best_experiment_index = metadata[BEST_EXPERIMENT_INDEX]
-            self.min_loss = metadata[MIN_LOSS]
+            self.max_score = metadata[MAX_SCORE]
             self.logger.info("Starting experiment %s from %s out of %s", self.experiment_name,
                              self.execution_counter, len(self.execution_order))
         else:
             self.execution_order = self._build_execution_order()
             self.execution_counter = 0
             self.best_experiment_index = None
-            self.min_loss = None
+            self.max_score = None
             self.logger.info("Starting experiment %s from scratch", self.experiment_name)
 
-    def run(self, train_data_folder_path, train_labels_folder_path, train_ids_path):
-
-        train_data_set_params = DataSetParams(train_data_folder_path, train_labels_folder_path, train_ids_path)
-
+    def run(self, train_data_set_params, val_data_set_params):
         for i in range(self.execution_counter, len(self.execution_order)):
             current_params = self.execution_order[i]
             sub_experiment_name = self._build_sub_experiment_name(current_params)
@@ -55,30 +54,32 @@ class CrossValidation(object):
             self.logger.info("Working on params: %s for experiment %s (%s out of %s)", current_params,
                              self.experiment_name, i, len(self.execution_order))
 
-            loss = self._execute(current_params, sub_experiment_name, train_data_set_params)
+            score = self._execute(current_params, sub_experiment_name, train_data_set_params, val_data_set_params)
 
-            self.logger.info("experiment %s got loss: %s with params: %s", self.experiment_name, loss, current_params)
+            self.logger.info("experiment %s got SBD score: %s with params: %s",
+                             self.experiment_name, score, current_params)
 
-            if self.min_loss is None or loss < self.min_loss:
-                self.min_loss = loss
+            if score and (self.max_score is None or score > self.max_score):
+                self.max_score = score
                 self.best_experiment_index = i
-                self.logger.info("experiment %s with params: %s got the lowest loss %s!", self.experiment_name,
-                                 current_params, loss)
+                self.logger.info("experiment %s with params: %s got the highest score %s!", self.experiment_name,
+                                 current_params, score)
 
             self.execution_counter = i + 1
             self._save()
 
-    def _execute(self, current_params, sub_experiment_name, train_data_set_params):
+    def _execute(self, current_params, sub_experiment_name, train_data_set_params, val_data_set_params):
         from train import run
         loss_params = LossParams(**current_params)
-        loss = run(self.experiment_name, train_data_set_params, loss_params, sub_experiment_name=sub_experiment_name)
-        return loss
+        score = run(self.experiment_name, train_data_set_params, loss_params, sub_experiment_name=sub_experiment_name,
+                    val_data_set_params=val_data_set_params)
+        return score
 
     def _save(self):
         metadata = {EXECUTION_ORDER: self.execution_order,
                     EXECUTION_COUNTER: self.execution_counter,
                     BEST_EXPERIMENT_INDEX: self.best_experiment_index,
-                    MIN_LOSS: self.min_loss}
+                    MAX_SCORE: self.max_score}
         pickle.dump(metadata,
                     open(os.path.join(os.path.join(chkpts_dir, self.experiment_name, METADATA_NAME)), "wb")
                     )

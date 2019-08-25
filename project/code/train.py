@@ -19,7 +19,7 @@ def worker_init_fn(worker_id):
     set_random_seed()
 
 
-def run(current_experiment, train_data_set_params, loss_params, sub_experiment_name=''):
+def run(current_experiment, train_data_set_params, loss_params, sub_experiment_name='', val_data_set_params=None):
     set_random_seed()
     # Dataloader
     train_dataset = CostumeDataset(train_data_set_params.ids_path,
@@ -98,5 +98,17 @@ def run(current_experiment, train_data_set_params, loss_params, sub_experiment_n
         plt.savefig(os.path.join('visualizations', current_experiment, sub_experiment_name, 'fe_loss.png'))
         plt.close()
 
-    # todo: use VAL loss instead of train loss
-    return train_loss
+    if val_data_set_params:
+        exp_logger.info("Done experiment: %s, sub: %s. Starting validation...", current_experiment, sub_experiment_name)
+        val_dataset = CostumeDataset(val_data_set_params.ids_path,
+                                     val_data_set_params.data_folder_path,
+                                     val_data_set_params.labels_folder_path,
+                                     mode="val", img_h=224, img_w=224)
+        val_dataloader = DataLoader(val_dataset, batch_size, shuffle=False)
+        model.eval()
+        average_loss, average_evaluation_results = evaluate_model(model, val_dataloader)
+        sbd_score = average_evaluation_results["SBD"]
+        exp_logger.info("Got average_evaluation_results: %s and average_loss: %s on validation set",
+                        average_evaluation_results, average_loss)
+
+        return sbd_score
