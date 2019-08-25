@@ -3,6 +3,7 @@ import numpy as np
 from torch.autograd import Variable
 import config
 import torch
+from utils.image_helper import get_image_center_pixel, get_image_mask_corners_pixels
 
 
 class LossModule(nn.Module):
@@ -142,6 +143,11 @@ class LossModule(nn.Module):
         L = list()
         means = list()
 
+        if self.loss_params.include_weighted_mean:
+            label_corners, label_centers = self.get_weighted_pixels_from_label(labels)
+            label_corners = label_corners.flatten()
+            label_centers = label_centers.flatten()
+
         labels = labels.flatten()
         labelEdges = labelEdges.flatten()
         features = features.permute(1, 2, 0).contiguous()
@@ -152,20 +158,63 @@ class LossModule(nn.Module):
         for instance, count in zip(instances, counts):
             if instance == config.PIXEL_IGNORE_VAL:
                 continue  # skip boundry for VOC
-            locations = Variable(torch.LongTensor(np.where(labels == instance)[0]).type(config.long_type))
-            boundaryLocations = Variable(torch.LongTensor(np.where(labelEdges == instance)[0]).type(config.long_type))
-            if boundaryLocations.shape[0] > self.loss_params.edges_max_pixels:
-                selectedBoundaries = Variable(
-                    torch.LongTensor(self.loss_params.edges_max_pixels).random_(0, boundaryLocations.shape[0]).type(
-                        config.long_type))
+
+            vectors = self._get_instance_vectors(features, labels, instance)
+            boundary_vectors = self._get_instance_vectors(features, labelEdges, instance,
+                                                          limit=self.loss_params.edges_max_pixels)
+            L.append((vectors, boundary_vectors))
+
+            if self.loss_params.include_weighted_mean:
+                mean = self._calc_weighted_mean(features, instance, label_centers, label_corners, vectors)
             else:
-                selectedBoundaries = boundaryLocations
-            vectors = torch.index_select(features, dim=0, index=locations).type(
-                config.double_type)  # all vectors of this instance
-            boundaryVectors = torch.index_select(features, dim=0, index=selectedBoundaries).type(
-                config.double_type)  # all boundary vectors of this instance
-            L.append((vectors, boundaryVectors))
-            means.append(torch.mean(vectors, dim=0))
+                mean = torch.mean(vectors, dim=0)
+            means.append(mean)
+
         T = (torch.stack(means), L)
 
         return T
+
+    def _calc_weighted_mean(self, features, instance, label_centers, label_corners, vectors):
+        corners_vectors = self._get_instance_vectors(features, label_corners, instance)
+        centers_vectors = self._get_instance_vectors(features, label_centers, instance)
+
+        number_of_pixels = len(vectors)
+
+        center_weight_for_instance = int(np.ceil(self.loss_params.center_weight * number_of_pixels))
+        corners_weight_for_instance = int(np.ceil(self.loss_params.corners_weight * number_of_pixels))
+
+        centers_vectors_torch = torch.cat([centers_vectors] * center_weight_for_instance)
+        corners_vectors_torch = torch.cat([corners_vectors] * corners_weight_for_instance)
+
+        mean = torch.mean(torch.cat([vectors, centers_vectors_torch, corners_vectors_torch]), dim=0)
+
+        return mean
+
+    @staticmethod
+    def _get_instance_vectors(features, ground_truth, instance, limit=None):
+        locations = Variable(torch.LongTensor(np.where(ground_truth == instance)[0]).type(config.long_type))
+
+        if limit is not None:
+            if locations.shape[0] > limit:
+                locations = Variable(torch.LongTensor(limit).random_(0, locations.shape[0]).type(config.long_type))
+
+        # all vectors of this instance
+        vectors = torch.index_select(features, dim=0, index=locations).type(config.double_type)
+
+        return vectors
+
+    @staticmethod
+    def get_weighted_pixels_from_label(label):
+        label_corners = np.full(label.shape, config.PIXEL_IGNORE_VAL)
+        label_centers = np.full(label.shape, config.PIXEL_IGNORE_VAL)
+
+        instances = np.unique(label)
+        for instance in instances:
+            coords = get_image_mask_corners_pixels(label, instance)
+            for x, y in coords:
+                label_corners[x][y] = instance
+
+            center = get_image_center_pixel(label, instance)
+            label_centers[center[0]][center[1]] = instance
+
+        return label_corners, label_centers

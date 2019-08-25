@@ -1,7 +1,8 @@
 class LossParams:
     def __init__(self, dv=2, dd=10, alpha=1, beta=1, gamma=1, delta=0.001,
                  include_edges=True, edges_max_pixels=200,
-                 norm=2):
+                 norm=2, include_weighted_mean=False,
+                 center_weight=0.1, corners_weight=0.025):
         """
         :param dv: variance-term (pulls the embedding towards the mean)
         :param dd: distance-term (pushes clusters away from each other)
@@ -22,3 +23,6 @@ class LossParams:
         self.norm = norm
         self.dv = dv
         self.dd = dd
+        self.include_weighted_mean = include_weighted_mean
+        self.center_weight = center_weight
+        self.corners_weight = corners_weight
