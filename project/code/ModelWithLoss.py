@@ -10,7 +10,6 @@ class CompleteModel(nn.Module):
         super(CompleteModel, self).__init__()
         self.fe = FeatureExtractor(embeddingDim)
         self.l = LossModule()
-        # self.type(config.double_type)
 
     def forward(self, imgBatch, lblBatch, lblEdgBatch):
         features = self.fe(imgBatch)

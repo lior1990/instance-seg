@@ -3,12 +3,14 @@ import os
 from utils.model_loader import loadAll
 import torch
 
-PIXEL_IGNORE_VAL = 255
 PIXEL_BOUNDARY_VAL = 255
+PIXEL_IGNORE_VAL = PIXEL_BOUNDARY_VAL
+BACKGROUND_LABEL = 0
 
 # Hyper parameters
 embedding_dim = 32
-batch_size = 10
+batch_size = 1
+MAX_NUM_OF_INSTANCES = 50
 
 
 class LossParams:
@@ -32,8 +34,8 @@ if torch.cuda.is_available() and torch.cuda.device_count() > 1:
 
 class TrainParams:
     def __init__(self):
-        self.maxLR = 1e-4
-        self.minLR = 1e-6
+        self.maxLR = 1e-6
+        self.minLR = 1e-5
         self.momentum = 0.9
         self.useNesterov = True
         self.learning_rate_factor = 0.1

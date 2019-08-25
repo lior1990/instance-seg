@@ -5,8 +5,8 @@ import matplotlib
 matplotlib.use('Agg')
 
 import torch.autograd
-# from imageio import imsave
-from scipy.misc import imsave
+from imageio import imsave
+# from scipy.misc import imsave
 from matplotlib import pyplot as plt
 from costum_dataset import CostumeDataset
 from torch.utils.data import DataLoader
@@ -77,7 +77,7 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
         try:
             inputs = Variable(batch['image'].type(float_type))
             labels = batch['label'].cpu().numpy()
-            features,xxx = fe(inputs,None,None)
+            features, totLoss, varLoss, distLoss, edgeLoss, regLoss = fe(inputs,None,None)
             inputs = inputs.cpu().numpy().squeeze()
             features  = features.cpu().numpy().squeeze()
             labels = labels.squeeze()
