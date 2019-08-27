@@ -5,8 +5,8 @@ import matplotlib
 matplotlib.use('Agg')
 
 import torch.autograd
-# from imageio import imsave
-from scipy.misc import imsave
+from imageio import imsave
+# from scipy.misc import imsave
 from matplotlib import pyplot as plt
 from costum_dataset import CostumeDataset
 from torch.utils.data import DataLoader

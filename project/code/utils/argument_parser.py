@@ -52,13 +52,14 @@ def validation_argument_parser():
     # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images_ids.txt')
     # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'overfit.txt')
 
-    # defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'images', '')
-    # defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'labels', '')
+    defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'images', '')
+    defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'labels', '')
+    defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'images_ids.txt')
     # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'overfit.txt')
 
-    defaultDataPath = os.path.join('..', '..', 'VOC2012', 'JPEGImages', '')
-    defaultLabelsPath = os.path.join('..', '..', 'VOC2012', 'SegmentationObject', '')
-    defaultIdsFile = os.path.join('..', '..', 'VOC2012', 'ImageSets', 'Segmentation', 'val.txt')
+    # defaultDataPath = os.path.join('..', '..', 'VOC2012', 'JPEGImages', '')
+    # defaultLabelsPath = os.path.join('..', '..', 'VOC2012', 'SegmentationObject', '')
+    # defaultIdsFile = os.path.join('..', '..', 'VOC2012', 'ImageSets', 'Segmentation', 'val.txt')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--current_experiment', help='Experiment name', required=False, default=defaultExperimentName)
@@ -76,7 +77,7 @@ def validation_argument_parser():
     currentEpoch = args.epoch_num
     GPUs = args.GPUs
 
-    current_experiment = 'test'
-    currentEpoch = '641'
+    # current_experiment = 'leafs_batch_5_cyc_lr_no_edges'
+    # currentEpoch = '1001'
 
     return current_experiment, currentEpoch, dataPath, labelsPath, idsPath, GPUs
