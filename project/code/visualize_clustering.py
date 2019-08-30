@@ -7,13 +7,11 @@ import torch.autograd
 from costum_dataset import CostumeDataset
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
-from config import config_experiment, float_type
+from config import config_logger, getFeatureExtractionModel, float_type
 from matplotlib import pyplot as plt
 
 
-
-
-def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
+def run(current_experiment, currentEpoch, data_path, labels_path, ids_path):
     try:
         os.makedirs(os.path.join('cluster_visualizations', current_experiment))
     except:
@@ -23,16 +21,11 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
     dataloader = DataLoader(dataset)
 
     # Set up an experiment
-    experiment, exp_logger = config_experiment(current_experiment, resume=True, useBest=False,currentEpoch=currentEpoch)
-
-    fe = load_model_from_experiment(experiment)
-
-    if torch.cuda.is_available():
-        print("Using CUDA")
-        fe.cuda()
-
+    exp_logger = config_logger(current_experiment)
+    fe = getFeatureExtractionModel(current_experiment,exp_logger,currentEpoch=currentEpoch)[0]
+    
     fe.eval()
-    for i,batch in enumerate(dataloader):
+    for i, batch in enumerate(dataloader):
         try:
             inputs = Variable(batch['image'].type(float_type))
             features, _ = fe(inputs, None, None)
@@ -59,7 +52,8 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
             plt.figure(figsize=(6, 5))
             colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'w', 'orange', 'purple'
             for idx, instance in enumerate(instances):
-                plt.scatter(features_2d[flat_labels == instance, 0], features_2d[flat_labels == instance, 1], c=colors[idx], label=instance)
+                plt.scatter(features_2d[flat_labels == instance, 0], features_2d[flat_labels == instance, 1],
+                            c=colors[idx], label=instance)
             plt.legend()
             plt.savefig(os.path.join('cluster_visualizations', current_experiment, "%s.png" % i))
             plt.close()
@@ -70,7 +64,6 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
 
 
 def main():
-
     current_experiment, currentEpoch, dataPath, labelsPath, idsPath = validation_argument_parser()
 
     with torch.no_grad():

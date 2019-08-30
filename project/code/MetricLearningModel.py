@@ -70,7 +70,6 @@ class UpsamplingBlock(nn.Module):
     '''
     def __init__(self, channels_in, channels_out, skip=False):
         super(UpsamplingBlock, self).__init__()
-        #self.upsamplingLayer = nn.ConvTranspose2d(channels_in, channels_out, kernel_size=2, stride=2)
         self.upsamplingLayer = nn.Sequential(nn.Upsample(scale_factor=2),
                                              nn.Conv2d(channels_in, channels_out, kernel_size=1, stride=1),
                                              nn.ReLU(),

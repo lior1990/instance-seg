@@ -1,15 +1,13 @@
 import torch.autograd
-from costum_dataset import *
 from torch.utils.data import DataLoader
-from evaluate import *
 from config import *
-import os
-import matplotlib
-from EmbeddingsClusteringNet import EmbeddingsClustering
+from ClusterNet import SingleClusterNet
+from ClusterNetDataset import SingleClustersDataSet
 from optimizer import *
-
+import numpy as np
+import torch.nn as nn
+from torch.autograd import Variable
 # matplotlib.use('Agg')
-from matplotlib import pyplot as plt
 
 
 def set_random_seed():
@@ -25,64 +23,79 @@ def worker_init_fn(worker_id):
 def run(current_experiment, train_data_folder_path, train_labels_folder_path, train_ids_path):
     set_random_seed()
     # Dataloader
-    train_dataset = CostumeDataset(train_ids_path, train_data_folder_path, train_labels_folder_path,
-                                   mode="train", img_h=224, img_w=224)
+    train_dataset = SingleClustersDataSet(train_ids_path, train_data_folder_path, train_labels_folder_path)
     train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True, num_workers=4,
                                   worker_init_fn=worker_init_fn)
 
-    # Set up an experiment
+    backgroundCount = 0
+    segmentCount = 0
+    for i, batch in enumerate(train_dataloader):
+        labels = batch['label'].cpu().numpy()
+        for l in labels:
+            ll = l[0]
+            backgroundCount = backgroundCount + len(np.where(ll < 0.5)[0])
+            segmentCount = segmentCount + len(np.where(ll > 0.5)[0])
+    weight = backgroundCount / segmentCount
 
-    fe, fe_opt, optScheduler, exp_logger, current_epoch, train_fe_loss_history = \
-        config_experiment(current_experiment, resume=True, useBest=False)
-    fe.eval()
+    # clusterNet = EmbeddingsClustering(embedding_dim, MAX_NUM_OF_INSTANCES)
+    clusterNet = SingleClusterNet(useSkip=True, useFC=True, segmentWeight=weight)
+    if torch.cuda.is_available():
+        print("Using CUDA")
+        device = torch.device("cuda:0")
+        if torch.cuda.device_count() > 1:
+            print("Using CUDA with %s GPUs!" % torch.cuda.device_count())
+            clusterNet = nn.DataParallel(clusterNet)
+    else:
+        device = torch.device("cpu")
 
-    clusterNet = EmbeddingsClustering(embedding_dim, MAX_NUM_OF_INSTANCES)
+    clusterNet.to(device)
     opt = getOptimizer(clusterNet)
-    # sched = getStepOptimizerScheduler(opt,-1)
-    sched = getCyclicOptimizerScheduler(opt, -1)
-
-    # exp_logger.info('training started/resumed at epoch ' + str(current_epoch))
-    exp_logger.info('training started/resumed at epoch ' + str(0))
-
-    # for i in range(current_epoch, trainParams.max_epoch_num):
-    for i in range(0, trainParams.max_epoch_num):
+    current_epoch = 0
+    # sched = getOptimizerScheduler(opt, current_epoch)
+    sched = getStepOptimizerScheduler(opt, -1)
+    # # exp_logger.info('training started/resumed at epoch ' + str(current_epoch))
+    # exp_logger.info('training started/resumed at epoch ' + str(0))
+    #
+    for i in range(current_epoch, trainParams.max_epoch_num):
         sched.step()
-        exp_logger.info('epoch: ' + str(i) + ' LR: ' + str(sched.get_lr()))
-        epochAvgLoss = 0
+        print('epoch: ' + str(i) + ' learning rate: ' + str(sched.get_lr()))
+        #     exp_logger.info('epoch: ' + str(i) + ' LR: ' + str(sched.get_lr()))
+        #     epochAvgLoss = 0
         for batch_num, batch in enumerate(train_dataloader):
-            inputs = Variable(batch['image'].type(float_type))
+            inputs = Variable(batch['data'].type(float_type))
             labels = batch['label'].cpu().numpy()
-            labelEdges = batch['labelEdges'].cpu().numpy()
+            currBatchSize = inputs.shape[0]
             opt.zero_grad()
-            with torch.no_grad():
-                features, totLoss, varLoss, distLoss, edgeLoss, regLoss = fe(inputs, labels, labelEdges)
-            predictedLabels, totalLoss = clusterNet(features, labels)
+            # with torch.no_grad():
+            #     features, totLoss, varLoss, distLoss, edgeLoss, regLoss = fe(inputs, labels, labelEdges)
+            predictedLabels, totalLoss = clusterNet(inputs, labels)
             totalLoss = totalLoss.sum()
-            totalLoss = totalLoss / batch_size
+            totalLoss = totalLoss / currBatchSize
             totalLoss.backward()
             opt.step()
-            epochAvgLoss += totalLoss.cpu().item()
-
-            exp_logger.info('epoch: ' + str(i) + ', batch number: ' + str(batch_num) +
-                            ', loss: ' + "{0:.2f}".format(totalLoss))
-        epochAvgLoss = epochAvgLoss / (batch_num + 1)
-        exp_logger.info('epoch: ' + str(i) + ', average loss: {0:.2f}'.format(epochAvgLoss))
-
-        # if i % trainParams.saveModelIntervalEpochs == 0:
-        #     # Save experiment
-        #     exp_logger.info('Saving checkpoint...')
-        #     save_experiment({'fe_state_dict': fe.state_dict(),
-        #                      'epoch': i + 1,
-        #                      'train_fe_loss': train_fe_loss_history},
-        #                     {'opt_state_dict': fe_opt.state_dict()},
-        #                     current_experiment)
-        # # Plot and save loss history
-        # plt.plot(train_fe_loss_history, 'r')
-        # try:
-        #     os.makedirs(os.path.join('visualizations', current_experiment))
-        # except:
-        #     pass
-        # plt.savefig(os.path.join('visualizations', current_experiment, 'fe_loss.png'))
-        # plt.close()
+            # epochAvgLoss += totalLoss.cpu().item()
+            print('epoch: ' + str(i) + ' batch: ' + str(batch_num) + ' loss: {0:.4f}'.format(totalLoss.cpu().item()))
+    #
+    #         exp_logger.info('epoch: ' + str(i) + ', batch number: ' + str(batch_num) +
+    #                         ', loss: ' + "{0:.2f}".format(totalLoss))
+    #     epochAvgLoss = epochAvgLoss / (batch_num + 1)
+    #     exp_logger.info('epoch: ' + str(i) + ', average loss: {0:.2f}'.format(epochAvgLoss))
+    #
+    #     # if i % trainParams.saveModelIntervalEpochs == 0:
+    #     #     # Save experiment
+    #     #     exp_logger.info('Saving checkpoint...')
+    #     #     save_experiment({'fe_state_dict': fe.state_dict(),
+    #     #                      'epoch': i + 1,
+    #     #                      'train_fe_loss': train_fe_loss_history},
+    #     #                     {'opt_state_dict': fe_opt.state_dict()},
+    #     #                     current_experiment)
+    #     # # Plot and save loss history
+    #     # plt.plot(train_fe_loss_history, 'r')
+    #     # try:
+    #     #     os.makedirs(os.path.join('visualizations', current_experiment))
+    #     # except:
+    #     #     pass
+    #     # plt.savefig(os.path.join('visualizations', current_experiment, 'fe_loss.png'))
+    #     # plt.close()
 
     return

@@ -47,8 +47,8 @@ def evaluate(current_experiment, currentEpoch, data_path, labels_path, ids_path)
     dataloader = DataLoader(dataset)
 
     # Set up an experiment
-    model, optimizer, optimizerScheduler, logger, epoch, lossHistory = \
-        config_experiment(current_experiment, resume=True, useBest=False, currentEpoch=currentEpoch)
+    logger = config_logger(current_experiment)
+    model = getFeatureExtractionModel(current_experiment,logger,currentEpoch=currentEpoch)[0]
 
     if torch.cuda.is_available():
         print("Using CUDA")

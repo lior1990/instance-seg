@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 from costum_dataset import CostumeDataset
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
-from config import config_experiment, float_type
+from config import config_logger,getFeatureExtractionModel, float_type
 from prediction import predict_label
 
 
@@ -65,12 +65,8 @@ def run(current_experiment,currentEpoch, data_path, labels_path, ids_path):
     dataloader = DataLoader(dataset)
 
     # Set up an experiment
-    fe, optimizer, optimizerScheduler, logger, epoch, lossHistory = \
-        config_experiment(current_experiment, resume=True, useBest=False,currentEpoch=currentEpoch)
-
-    if torch.cuda.is_available():
-        print("Using CUDA")
-        fe.cuda()
+    logger = config_logger(current_experiment)
+    fe = getFeatureExtractionModel(current_experiment,logger,currentEpoch=currentEpoch)[0]
 
     fe.eval()
     for i,batch in enumerate(dataloader):

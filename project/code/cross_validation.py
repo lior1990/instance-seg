@@ -1,7 +1,8 @@
 import os
 import pickle
 
-from config import chkpts_dir, config_logger
+from config import feature_extraction_chkpts_dir as chkpts_dir
+from config import config_logger
 from loss_params import LossParams
 from utils.objects import DataSetParams
 
@@ -17,9 +18,8 @@ class CrossValidation(object):
     def __init__(self, experiment_name):
         self.experiment_name = experiment_name
         self.params_search = \
-            {"dv": [2, 3, 4],
-             "dd": [5, 10, 20],
-             "gamma": [0.1, 0.001, 0.0001],
+            {"dv": [0],
+             "dd": [100],
              "include_edges": [True, False]
              }
         # the keys of this dict represents a feature params, that without being ON, their dict values has no meaning

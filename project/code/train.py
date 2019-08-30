@@ -30,11 +30,10 @@ def run(current_experiment, train_data_set_params, loss_params, sub_experiment_n
                                   worker_init_fn=worker_init_fn)
 
     # Set up an experiment
-
-    model, model_optimizer, optimizer_scheduler, exp_logger, current_epoch, train_loss_history = \
-        config_experiment(current_experiment, loss_params=loss_params,
-                          sub_experiment_name=sub_experiment_name,
-                          resume=True, useBest=False)
+    exp_logger = config_logger(current_experiment, sub_experiment_name)
+    model, model_optimizer, optimizer_scheduler, current_epoch, train_loss_history = \
+        getFeatureExtractionModel(current_experiment, exp_logger, loss_params=loss_params,
+                                  sub_experiment_name=sub_experiment_name, resume=True, useBest=False)
 
     exp_logger.info('training started/resumed at epoch ' + str(current_epoch))
 

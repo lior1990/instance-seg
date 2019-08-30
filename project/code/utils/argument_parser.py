@@ -7,16 +7,20 @@ def train_argument_parser():
     default_experiment_name = 'exp_' + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
     # default_train_data_path = os.path.join('..', '..', 'COCO', 'train2017', '')
-    default_train_data_path = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'images', '')
+    # default_train_data_path = os.path.join('..', '..', 'cvppp', 'all_plants', 'train1', 'images', '')
+    default_train_data_path = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'mask_distances', '')
 
     # default_train_labels_path = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
-    default_train_labels_path = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'labels', '')
+    # default_train_labels_path = os.path.join('..', '..', 'cvppp', 'all_plants', 'train1', 'labels', '')
+    default_train_labels_path = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'mask_labels', '')
 
     # default_train_ids_file = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
     # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'all_plants', 'train1', 'images_ids.txt')
+    default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'mask_ids.txt')
+    # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'mask_overfit.txt')
 
     # default_train_ids_file = os.path.join('..', '..', 'COCO', 'overfit.txt')
-    default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'overfit.txt')
+    # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'overfit.txt')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--current_experiment', help='Experiment name', required=False, default=default_experiment_name)
@@ -32,7 +36,7 @@ def train_argument_parser():
     train_ids_path = args.train_ids_file_path
 
     GPUs = args.GPUs
-    current_experiment = 'test'
+
     return current_experiment, train_data_folder_path, train_labels_folder_path, train_ids_path, GPUs
 
 
