@@ -23,11 +23,11 @@ class TrainParams:
         self.minLR = 0.001  # 1e-6
         self.momentum = 0.9
         self.useNesterov = True
-        self.learning_rate_factor = 0.3
+        self.learning_rate_factor = 0.5
         self.optStepSize = 100
         self.optHalfCycle = 50
         self.max_epoch_num = 10001
-        self.saveModelIntervalEpochs = 10
+        self.saveModelIntervalEpochs = 50
 
 
 trainParams = TrainParams()

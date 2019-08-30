@@ -23,7 +23,7 @@ def run(current_experiment, currentEpoch, data_path, labels_path, ids_path):
     # Set up an experiment
     exp_logger = config_logger(current_experiment)
     fe = getFeatureExtractionModel(current_experiment,exp_logger,currentEpoch=currentEpoch)[0]
-    
+
     fe.eval()
     for i, batch in enumerate(dataloader):
         try:
