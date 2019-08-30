@@ -152,6 +152,10 @@ def save_experiment(exp, opt, name, sub_experiment_name='', isBest=False, cluste
 
 
 def config_logger(current_exp, sub_experiment_name=""):
+    try:
+        os.makedirs(os.path.join(logsDir, current_exp, sub_experiment_name))
+    except:
+        pass
     logger = logging.getLogger(sub_experiment_name) if sub_experiment_name else logging.getLogger(current_exp)
     logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler()
