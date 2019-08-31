@@ -31,8 +31,8 @@ with torch.no_grad():
     dataloader = DataLoader(dataset)
 
     # Set up an experiment
-    fe, optimizer, optimizerScheduler, logger, epoch, lossHistory = \
-        config_experiment(currentExperiment, resume=True, useBest=False, currentEpoch=currentEpoch)
+    logger = config_logger(currentExperiment)
+    fe = getFeatureExtractionModel(currentExperiment,logger,currentEpoch=currentEpoch)[0]
     fe.eval()
     for i, batch in enumerate(dataloader):
         try:

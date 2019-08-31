@@ -7,16 +7,23 @@ def train_argument_parser():
     default_experiment_name = 'exp_' + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
     # default_train_data_path = os.path.join('..', '..', 'COCO', 'train2017', '')
-    default_train_data_path = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'images', '')
+    # default_train_data_path = os.path.join('..', '..', 'cvppp', 'all_plants', 'train1', 'images', '')
+    # default_train_data_path = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'mask_distances', '')
+    default_train_data_path = os.path.join('..', '..', 'cvppp', 'all_plants', 'train2', 'mask_distances', '')
 
     # default_train_labels_path = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
-    default_train_labels_path = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'labels', '')
+    # default_train_labels_path = os.path.join('..', '..', 'cvppp', 'all_plants', 'train1', 'labels', '')
+    # default_train_labels_path = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'mask_labels', '')
+    default_train_labels_path = os.path.join('..', '..', 'cvppp', 'all_plants', 'train2', 'mask_labels', '')
 
     # default_train_ids_file = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
     # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'all_plants', 'train1', 'images_ids.txt')
+    # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'mask_ids.txt')
+    default_train_ids_file = os.path.join('..', '..', 'cvppp', 'all_plants', 'train2', 'mask_ids.txt')
+    # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'mask_overfit.txt')
 
     # default_train_ids_file = os.path.join('..', '..', 'COCO', 'overfit.txt')
-    default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'overfit.txt')
+    # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'overfit.txt')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--current_experiment', help='Experiment name', required=False, default=default_experiment_name)
@@ -32,7 +39,7 @@ def train_argument_parser():
     train_ids_path = args.train_ids_file_path
 
     GPUs = args.GPUs
-    current_experiment = 'test'
+
     return current_experiment, train_data_folder_path, train_labels_folder_path, train_ids_path, GPUs
 
 
@@ -52,13 +59,14 @@ def validation_argument_parser():
     # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'images_ids.txt')
     # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train', 'overfit.txt')
 
-    # defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'images', '')
-    # defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'labels', '')
+    defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'images', '')
+    defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'labels', '')
+    defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'images_ids.txt')
     # defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'overfit.txt')
 
-    defaultDataPath = os.path.join('..', '..', 'VOC2012', 'JPEGImages', '')
-    defaultLabelsPath = os.path.join('..', '..', 'VOC2012', 'SegmentationObject', '')
-    defaultIdsFile = os.path.join('..', '..', 'VOC2012', 'ImageSets', 'Segmentation', 'val.txt')
+    # defaultDataPath = os.path.join('..', '..', 'VOC2012', 'JPEGImages', '')
+    # defaultLabelsPath = os.path.join('..', '..', 'VOC2012', 'SegmentationObject', '')
+    # defaultIdsFile = os.path.join('..', '..', 'VOC2012', 'ImageSets', 'Segmentation', 'val.txt')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--current_experiment', help='Experiment name', required=False, default=defaultExperimentName)
@@ -76,7 +84,7 @@ def validation_argument_parser():
     currentEpoch = args.epoch_num
     GPUs = args.GPUs
 
-    current_experiment = 'test'
-    currentEpoch = '641'
+    # current_experiment = 'leafs_batch_5_cyc_lr_no_edges'
+    # currentEpoch = '1001'
 
     return current_experiment, currentEpoch, dataPath, labelsPath, idsPath, GPUs
