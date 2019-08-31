@@ -192,8 +192,19 @@ def convertIndividualSegmentsToSingleImage(segments):
 
     for i in range(N):
         currSegment = segments[i, 0]
-        converted[np.where(currSegment > 0.5)] = currLabel
-        currLabel += 1
+        newUpdateLocations = np.where((currSegment > 0.5) & (converted == 0))  # all unlabeled locations in this segment
+        labelToAvoid = 0
+        if newUpdateLocations[0].size > 0:
+            converted[newUpdateLocations] = currLabel
+            labelToAvoid = currLabel
+            currLabel += 1
+        reUpdateLocations = np.where(
+            (currSegment > 0.5) & (converted != labelToAvoid))  # all previously labeled locations in this segement
+
+        if reUpdateLocations[0].size > 0:
+            converted[reUpdateLocations] = currLabel
+            currLabel += 1
+
 
     return converted
 
@@ -296,8 +307,14 @@ def run(feExpName, clExpName, feEpoch, clEpoch, dataPath, labelsPath, idsFilePat
             file.write('\n')
         lastLoc = len(hdbEvalResults) - 1
         file.write('hdbscan only mean: ' + str(hdbEvalResults[lastLoc]))
+        file.write('\n')
         file.write('hdbscan and MRF mean: ' + str(hdbMrfEvalResults[lastLoc]))
+        file.write('\n')
         file.write('hdbscan and ClusterNet mean : ' + str(hdbClusterNetEvalResults[lastLoc]))
+        file.write('\n')
         file.write('hdbscan and ClusterNet and MRF mean: ' + str(hdbClusterNetMrfEvalResults[lastLoc]))
+        file.write('\n')
         file.write('hdbscan and MRF and ClusterNet mean: ' + str(hdbMrfClusterNetEvalResults[lastLoc]))
+        file.write('\n')
         file.write('hdbscan and MRF and ClusterNet and MRF mean: ' + str(hdbMrfClusterNetMrfEvalResults[lastLoc]))
+        file.write('\n')
