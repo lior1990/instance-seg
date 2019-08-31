@@ -24,7 +24,7 @@ class SingleClustersDataSet(Dataset):
         id = self.ids[item]
         dataName = os.path.join(self.dataPath, str(id) + self.DATA_FILE_TYPE)
         labelName = os.path.join(self.labelsPath, str(id) + self.LABE_FILE_TYPE)
-        data = torch.load(dataName).type(config.float_type)
+        data = torch.load(dataName, map_location='cpu')
         if len(data.shape) == 2:
             data = torch.unsqueeze(data, dim=0)
         labelIm = im.open(labelName)

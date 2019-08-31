@@ -16,6 +16,14 @@ def getCyclicOptimizerScheduler(optimizer, lastEpochTrained):
     return optScheduler
 
 
+def getMultiStepOptimizerScheduler(optimizer, lastEpochTrained):
+    optScheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizer,
+                                                        milestones=config.trainParams.multiStepEpochs,
+                                                        gamma=config.trainParams.learning_rate_factor,
+                                                        last_epoch=lastEpochTrained)
+    return optScheduler
+
+
 def getStepOptimizerScheduler(optimizer, lastEpochTrained):
     optScheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=config.trainParams.optStepSize,
                                                    gamma=config.trainParams.learning_rate_factor,
@@ -26,5 +34,6 @@ def getStepOptimizerScheduler(optimizer, lastEpochTrained):
 def getOptimizerScheduler(optimizer, lastEpochTrained):
     if lastEpochTrained == 0:
         lastEpochTrained = -1
-    return getStepOptimizerScheduler(optimizer, lastEpochTrained)
+    # return getStepOptimizerScheduler(optimizer, lastEpochTrained)
+    return getMultiStepOptimizerScheduler(optimizer, lastEpochTrained)
     # return getCyclicOptimizerScheduler(optimizer, lastEpochTrained)
