@@ -20,10 +20,12 @@ class Evaluator(object):
         :param ground_truth:
         """
         self._calls_counter += 1
-
+        currEvalScores = {evaluation_name: 0 for evaluation_name, evaluation_func in self._evaluations}
         for evaluation_name, evaluation_func in self._evaluations:
             evaluation_score = evaluation_func(prediction, ground_truth)
+            currEvalScores[evaluation_name] = evaluation_score
             self._results[evaluation_name] += evaluation_score
+        return currEvalScores
 
     def get_average_results(self):
-        return {key: value/self._calls_counter for key, value in self._results.items()}
+        return {key: value / self._calls_counter for key, value in self._results.items()}

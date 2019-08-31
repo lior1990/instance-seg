@@ -70,7 +70,7 @@ def validation_argument_parser():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--current_experiment', help='Experiment name', required=False, default=defaultExperimentName)
-    parser.add_argument('--epoch_num',help='Epoch number',required=False,default='latest')
+    parser.add_argument('--epoch_num', help='Epoch number', required=False, default='latest')
     parser.add_argument('--data_folder_path', required=False, default=defaultDataPath)
     parser.add_argument('--labels_folder_path', required=False, default=defaultLabelsPath)
     parser.add_argument('--ids_file_path', required=False, default=defaultIdsFile)
@@ -88,3 +88,38 @@ def validation_argument_parser():
     # currentEpoch = '1001'
 
     return current_experiment, currentEpoch, dataPath, labelsPath, idsPath, GPUs
+
+
+def evaluation_argument_parser():
+    defaultFeExperimentName = 'exp_fe_' + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    defaultClExperimentName = 'exp_cl_' + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+
+    defaultDataPath = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'images', '')
+    defaultLabelsPath = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'labels', '')
+    defaultIdsFile = os.path.join('..', '..', 'cvppp', 'formatted', 'val', 'images_ids.txt')
+    defaultOutPath = os.path.join('.', 'outputs', '')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--fe_name', help='Feature extractor experiment name', required=False,
+                        default=defaultFeExperimentName)
+    parser.add_argument('--cl_name', help='Clustering experiment name', required=False, default=defaultClExperimentName)
+    parser.add_argument('--fe_epoch_num', help='Feature extractor epoch number', required=False, default='latest')
+    parser.add_argument('--cl_epoch_num', help='Clustering epoch number', required=False, default='latest')
+    parser.add_argument('--data_folder_path', required=False, default=defaultDataPath)
+    parser.add_argument('--labels_folder_path', required=False, default=defaultLabelsPath)
+    parser.add_argument('--ids_file_path', required=False, default=defaultIdsFile)
+    parser.add_argument('--output_path', required=False, default=defaultOutPath)
+    parser.add_argument('--GPUs', required=False, type=str)
+
+    args = parser.parse_args()
+    fe_experiment = args.fe_name
+    cl_experiment = args.cl_name
+    feEpoch = args.fe_epoch_num
+    clEpoch = args.cl_epoch_num
+    dataPath = args.data_folder_path
+    labelsPath = args.labels_folder_path
+    idsPath = args.ids_file_path
+    outputPath = args.output_path
+    GPUs = args.GPUs
+
+    return fe_experiment, cl_experiment, feEpoch, clEpoch, dataPath, labelsPath, idsPath, outputPath, GPUs
