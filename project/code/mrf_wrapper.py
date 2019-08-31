@@ -5,7 +5,6 @@ from imageio import imsave, imread
 
 from mrf import denoise_image
 
-
 SOURCE_SIMILARITY_FACTOR = 7
 NEIGHBORS_SIMILARITY_FACTOR = 10
 
@@ -15,6 +14,7 @@ def _get_bg_color(colors, counts):
 
 
 def denoise_colored_image(img):
+
     colors, counts = np.unique(img, return_counts=True)
 
     print("There are %d colors in the given image of shape: %s" % (len(colors), str(img.shape)))

@@ -39,6 +39,8 @@ def _best_dice_score(x, y):
     """
     x_instances_without_bg, _ = _get_instances_and_bg_instance(x)
     y_instances_without_bg, _ = _get_instances_and_bg_instance(y)
+    if len(x_instances_without_bg) == 0 or len(y_instances_without_bg) == 0:
+        return 0
 
     total_score = 0
 
@@ -54,11 +56,13 @@ def _best_dice_score(x, y):
 
         total_score += max_val
 
-    return total_score/len(x_instances_without_bg)
+    return total_score / len(x_instances_without_bg)
 
 
 def _dice_score(x_mask, y_mask):
     overlap = np.sum(np.logical_and(x_mask, y_mask))
+    if overlap == 0:
+        return 0
     score = 2.0 * overlap / np.sum(x_mask + y_mask)
     return score
 

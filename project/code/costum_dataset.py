@@ -63,6 +63,7 @@ class CostumeDataset(Dataset):
             # apply the same augmentation on image and label
             img, label = augmentation(img, label)
 
+        originalImage = self.data_transforms['label'](img)
         img = self.data_transforms["img"](img)
         label = self.data_transforms["label"](label)
 
@@ -72,7 +73,7 @@ class CostumeDataset(Dataset):
                 if not self.__isBoundaryPixel(w, h, label):
                     labelEdges[w, h] = PIXEL_IGNORE_VAL  # this is special value to ignore
 
-        return {'image': img, 'label': label, 'labelEdges': labelEdges, 'size': size}
+        return {'image': img, 'originalImage': originalImage, 'label': label, 'labelEdges': labelEdges, 'size': size}
 
     def __isBoundaryPixel(self, w, h, labelIm):
         pixelVal = labelIm[w, h]
