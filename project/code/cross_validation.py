@@ -18,9 +18,11 @@ class CrossValidation(object):
     def __init__(self, experiment_name):
         self.experiment_name = experiment_name
         self.params_search = \
-            {"dv": [0],
-             "dd": [100],
-             "include_edges": [True, False]
+            {"dv": [0.5, 1],
+             "dd": [5, 10, 20],
+             "include_edges": [True, False],
+             "include_weighted_mean": [True, False],
+             "alpha": [1, 2]
              }
         # the keys of this dict represents a feature params, that without being ON, their dict values has no meaning
         self.features_params = {"include_edges": ["edges_max_pixels"],
