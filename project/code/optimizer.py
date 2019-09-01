@@ -35,5 +35,5 @@ def getOptimizerScheduler(optimizer, lastEpochTrained):
     if lastEpochTrained == 0:
         lastEpochTrained = -1
     # return getStepOptimizerScheduler(optimizer, lastEpochTrained)
-    return getMultiStepOptimizerScheduler(optimizer, lastEpochTrained)
-    # return getCyclicOptimizerScheduler(optimizer, lastEpochTrained)
+    # return getMultiStepOptimizerScheduler(optimizer, lastEpochTrained)
+    return getCyclicOptimizerScheduler(optimizer, lastEpochTrained)

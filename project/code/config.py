@@ -9,7 +9,7 @@ BACKGROUND_LABEL = 0
 
 # Hyper parameters
 embedding_dim = 32
-batch_size = 500
+batch_size = 5
 # MAX_NUM_OF_INSTANCES = 50
 
 
@@ -19,15 +19,15 @@ if torch.cuda.is_available() and torch.cuda.device_count() > 1:
 
 class TrainParams:
     def __init__(self):
-        self.maxLR = 0.01  # 1e-4
-        self.minLR = 0.001  # 1e-6
+        self.maxLR = 1e-4
+        self.minLR = 1e-6
         self.momentum = 0.9
         self.useNesterov = True
         self.learning_rate_factor = 0.1
         self.multiStepEpochs = [100,300,1500] # learning rates will be: 0.01,0.001,0.0001,0.00001
         self.optStepSize = 200
         self.optHalfCycle = 50
-        self.max_epoch_num = 10001
+        self.max_epoch_num = 1001
         self.saveModelIntervalEpochs = 50
 
 
