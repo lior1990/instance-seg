@@ -156,10 +156,12 @@ def mergeFolders(folderList, outLoc):
 
 
 if __name__ == '__main__':
-    folderList = ['C:\\Git\\instance-seg\\cvppp\\training\\A1\\',
-                  'C:\\Git\\instance-seg\\cvppp\\training\\A2\\',
-                  'C:\\Git\\instance-seg\\cvppp\\training\\A3\\',
-                  'C:\\Git\\instance-seg\\cvppp\\training\\A4\\']
-    mergedLoc = 'C:\\Git\\instance-seg\\cvppp\\merged\\'
+    # folderList = ['C:\\Git\\instance-seg\\cvppp\\training\\A1\\',
+    #               'C:\\Git\\instance-seg\\cvppp\\training\\A2\\',
+    #               'C:\\Git\\instance-seg\\cvppp\\training\\A3\\',
+    #               'C:\\Git\\instance-seg\\cvppp\\training\\A4\\']
+
+    # mergedLoc = 'C:\\Git\\instance-seg\\cvppp\\merged\\'
     # mergeFolders(folderList, mergedLoc)
-    convert(mergedLoc, 'C:\\Git\\instance-seg\\cvppp\\formatted\\', 350,110)
+    mergedLoc = 'C:\\Git\\instance-seg\\cvppp\\training\\A1\\'
+    convert(mergedLoc, 'C:\\Git\\instance-seg\\cvppp\\formattedA1Only\\', 78,20)
