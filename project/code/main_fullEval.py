@@ -26,7 +26,7 @@ def main():
     fe_experiment = 'leafs_batch_5_cyc_lr_no_edges_dv0_5_dd10'
     cl_experiment = 'test'
     feEpoch = '1001'
-    clEpoch = '1401'
+    clEpoch = '501'
     _runFullEval(fe_experiment, cl_experiment, feEpoch, clEpoch, dataPath, labelsPath, idsPath, outputPath)
 
 

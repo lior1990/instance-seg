@@ -57,7 +57,7 @@ def loadEmbeddingLearningModel(modelChkpt, lossParams):
 
 def loadClusterLearningModel(modelChkpt):
     pass
-    model = SingleClusterNet(useSkip=True, segmentWeight=87.268)  # calculated this weight before
+    model = SingleClusterNet(useSkip=True, segmentWeight=105.46)  # calculated this weight before
     if modelChkpt is not None:
         try:
             model.load_state_dict(modelChkpt['cl_state_dict'])

@@ -57,16 +57,17 @@ def getMask(features, labels, focusLabel):
     return maskLabels, distMap, maskVisualization
 
 
-def run(dataSetParams, expName, epochName, dataOutPath, labelsOutPath, outIdsFilePath):
+def run(dataSetParams, expName, epochName, dataOutPath, labelsOutPath, outIdsFilePath, counter=0):
     createOutputLocations(dataOutPath, labelsOutPath)
     with torch.no_grad():
         dataset = CostumeDataset(dataSetParams.ids_path, dataSetParams.data_folder_path,
-                                 dataSetParams.labels_folder_path)
+                                 dataSetParams.labels_folder_path, mode='val')
         dataloader = DataLoader(dataset)
         logger = config_logger(expName)
-        model = getFeatureExtractionModel(name=expName,logger=logger,currentEpoch=epochName)[0]
+        model = getFeatureExtractionModel(name=expName, logger=logger, currentEpoch=epochName)[0]
         model.eval()
-        counter = 0
+        segmentCount = 0
+        backgroundCount = 0
         with open(outIdsFilePath, 'w') as file:
             for i, batch in enumerate(dataloader):
                 image = batch['image']
@@ -76,26 +77,39 @@ def run(dataSetParams, expName, epochName, dataOutPath, labelsOutPath, outIdsFil
                 for currentLabel in allLabels:
                     if currentLabel == BACKGROUND_LABEL:
                         continue
-                    maskLabel, maskDistances, maskVisualization = getMask(features[0][0], label[0][0], currentLabel)
+                    maskLabel, maskDistances, maskVisualization = getMask(features[0], label[0], currentLabel)
+                    segmentCount += len(np.where(maskLabel >= 128)[0])
+                    backgroundCount += len(np.where(maskLabel < 128)[0])
                     file.write(str(counter).zfill(NUM_OF_CHARS) + '\n')
                     torch.save(maskDistances, dataOutPath + str(counter).zfill(NUM_OF_CHARS) + '.sv')
                     imsave(dataOutPath + str(counter).zfill(NUM_OF_CHARS) + '_visualize.jpg', maskVisualization)
                     imsave(labelsOutPath + str(counter).zfill(NUM_OF_CHARS) + '.png', maskLabel)
                     counter += 1
+    return counter, segmentCount, backgroundCount
 
 
 def main():
-    imagesFolderPath = os.path.join('..', '..', '..', 'cvppp', 'formatted', 'train2', 'images', '')
-    labelsFolderPath = os.path.join('..', '..', '..', 'cvppp', 'formatted', 'train2', 'labels', '')
-    imagesIdsFilePath = os.path.join('..', '..', '..', 'cvppp', 'formatted', 'train2', 'images_ids.txt')
-    dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formatted', 'train2', 'mask_distances', '')
-    labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formatted', 'train2', 'mask_labels', '')
-    outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formatted', 'train2', 'mask_ids.txt'))
+    imagesFolderPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'images', '')
+    labelsFolderPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'labels', '')
+    imagesIdsFilePath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'images_ids.txt')
+    dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances', '')
+    labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels', '')
+    outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids.txt'))
     experiment_name = 'trained_model'
-    epochName = '1001'
+    epochName = '401'
     dataSetParams = DataSetParams(data_folder_path=imagesFolderPath, labels_folder_path=labelsFolderPath,
                                   ids_path=imagesIdsFilePath)
-    run(dataSetParams, experiment_name, epochName, dataOutPath, labelsOutPath, outIdsFilePath)
+    counter = 0
+    totalSegmentCount = 0
+    totalBackgroundCount = 0
+    for i in range(1):
+        print(i)
+        counter, segCnt, bgCnt = run(dataSetParams, experiment_name, epochName, dataOutPath, labelsOutPath,
+                                     outIdsFilePath, counter)
+        totalSegmentCount += segCnt
+        totalBackgroundCount += bgCnt
+    weight = totalBackgroundCount / totalSegmentCount
+    print('the weight of the background over ech segment is', str(weight))
 
 
 if __name__ == '__main__':

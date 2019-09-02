@@ -162,7 +162,11 @@ def convertToClusterNetInput(features, labels):
     h = labels.shape[0]
     w = labels.shape[1]
     colors, counts = np.unique(labels, return_counts=True)
+    countSortedInd = np.argsort(-counts)  # get sorted indices from big to small
+    colors = colors[countSortedInd]
+    counts = counts[countSortedInd]
     backgroundColor = colors[np.argmax(counts)]
+    assert (backgroundColor == colors[0])
 
     N = len(colors) - 1  # without background
     converted = torch.zeros((N, 1, h, w)).type(float_type)
@@ -192,19 +196,24 @@ def convertIndividualSegmentsToSingleImage(segments):
 
     for i in range(N):
         currSegment = segments[i, 0]
-        newUpdateLocations = np.where((currSegment > 0.5) & (converted == 0))  # all unlabeled locations in this segment
-        labelToAvoid = 0
-        if newUpdateLocations[0].size > 0:
-            converted[newUpdateLocations] = currLabel
-            labelToAvoid = currLabel
-            currLabel += 1
-        reUpdateLocations = np.where(
-            (currSegment > 0.5) & (converted != labelToAvoid))  # all previously labeled locations in this segement
+        updateLocations = np.where(currSegment > 0.5)
+        converted[updateLocations] = currLabel  # in case of a collision the last segment wins
+        currLabel += 1
 
-        if reUpdateLocations[0].size > 0:
-            converted[reUpdateLocations] = currLabel
-            currLabel += 1
+        # uncomment the following instead of the previous three lines in order to create two segments in the collision
 
+        # newUpdateLocations = np.where((currSegment > 0.5) & (converted == 0))  # all unlabeled locations in this segment
+        # labelToAvoid = 0
+        # if newUpdateLocations[0].size > 0:
+        #     converted[newUpdateLocations] = currLabel
+        #     labelToAvoid = currLabel
+        #     currLabel += 1
+        # reUpdateLocations = np.where(
+        #     (currSegment > 0.5) & (converted != labelToAvoid))  # all previously labeled locations in this segement
+        #
+        # if reUpdateLocations[0].size > 0:
+        #     converted[reUpdateLocations] = currLabel
+        #     currLabel += 1
 
     return converted
 
