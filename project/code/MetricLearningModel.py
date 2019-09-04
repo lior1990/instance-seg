@@ -17,13 +17,18 @@ class FeatureExtractor(nn.Module):
         super(FeatureExtractor, self).__init__()
         self.embedding_dim = embedding_dim
         self.resnet = models.resnet101(True)  # can be resnet34 or 50
+        # self.resnet = models.resnet34(True)  # can be resnet34 or 50
         for param in self.resnet.parameters():   # Freeze resnet layers
             param.requires_grad = False
 
         self.upsample1 = UpsamplingBlock(2048, 1024, skip=True)
+        # self.upsample1 = UpsamplingBlock(512, 256, skip=True)
         self.upsample2 = UpsamplingBlock(1024, 512, skip=True)
+        # self.upsample2 = UpsamplingBlock(256, 128, skip=True)
         self.upsample3 = UpsamplingBlock(512, 256, skip=True)
+        # self.upsample3 = UpsamplingBlock(128, 64, skip=True)
         self.upsample4 = UpsamplingBlock(256, 64, skip=True)
+        # self.upsample4 = UpsamplingBlock(64, 64, skip=True)
         self.upsample5 = UpsamplingBlock(64, 64, skip=False)
         self.finalConv = nn.Sequential(nn.Conv2d(64, self.embedding_dim, 1, 1),
                                        nn.ReLU(),

@@ -51,11 +51,11 @@ def run(current_experiment, train_data_set_params, loss_params, sub_experiment_n
             labelEdges = batch['labelEdges'].cpu().numpy()
             model_optimizer.zero_grad()
             features, totLoss, varLoss, distLoss, edgeLoss, regLoss = model(inputs, labels, labelEdges)
-            totalLoss = totLoss.sum() / batch_size
-            varianceLoss = varLoss.sum() / batch_size
-            distanceLoss = distLoss.sum() / batch_size
-            edgeToEdgeLoss = edgeLoss.sum() / batch_size
-            regularizationLoss = regLoss.sum() / batch_size
+            totalLoss = totLoss.sum() / inputs.shape[0]
+            varianceLoss = varLoss.sum() / inputs.shape[0]
+            distanceLoss = distLoss.sum() / inputs.shape[0]
+            edgeToEdgeLoss = edgeLoss.sum() / inputs.shape[0]
+            regularizationLoss = regLoss.sum() / inputs.shape[0]
             totalLoss.backward()
             model_optimizer.step()
 

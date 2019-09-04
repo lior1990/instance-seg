@@ -92,11 +92,11 @@ def main():
     imagesFolderPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'images', '')
     labelsFolderPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'labels', '')
     imagesIdsFilePath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'images_ids.txt')
-    dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances', '')
-    labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels', '')
-    outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids.txt'))
+    dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances_original_paper', '')
+    labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels_original_paper', '')
+    outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids_original_paper.txt'))
     experiment_name = 'trained_model'
-    epochName = '401'
+    epochName = '1001'
     dataSetParams = DataSetParams(data_folder_path=imagesFolderPath, labels_folder_path=labelsFolderPath,
                                   ids_path=imagesIdsFilePath)
     counter = 0
