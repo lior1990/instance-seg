@@ -8,9 +8,8 @@ PIXEL_IGNORE_VAL = PIXEL_BOUNDARY_VAL
 BACKGROUND_LABEL = 0
 
 # Hyper parameters
-embedding_dim = 32 #16
+embedding_dim = 32  # 16
 batch_size = 5
-
 
 if torch.cuda.is_available() and torch.cuda.device_count() > 1:
     batch_size = batch_size * torch.cuda.device_count()
@@ -18,17 +17,17 @@ if torch.cuda.is_available() and torch.cuda.device_count() > 1:
 
 class TrainParams:
     def __init__(self):
-        self.maxLR = 1e-2 # 0.01 good for cluster net, 1e-4 good for embedding net
+        self.maxLR = 1e-2  # 0.01 good for cluster net, 1e-4 good for embedding net
         self.minLR = 1e-6
         self.momentum = 0.9
         self.useNesterov = True
         self.learning_rate_factor = 0.1
-        self.multiStepEpochs = [350,1200,2500] # learning rates will be: 0.01,0.001,0.0001,0.00001 note that
+        self.multiStepEpochs = [350, 1200, 2500]  # learning rates will be: 0.01,0.001,0.0001,0.00001 note that [350, 1200, 2500] are good for clustering
         self.optStepSize = 200
         self.optHalfCycle = 50
-        self.max_epoch_num = 10001
+        self.max_epoch_num = 5001  # 5001 for clustering net 501 for embedding net
         self.saveModelIntervalEpochs = 50
-        self.weightDecay = 0.01 # 0.01 good for cluster net 0 good for embedding net
+        self.weightDecay = 0.01  # 0.01 good for cluster net 0 good for embedding net
 
 
 trainParams = TrainParams()
