@@ -21,6 +21,9 @@ LABELS_FORMAT = 'png'
 MIN_CLUSTER_SIZE = 10
 RESCALE_FACTOR = 2
 
+USE_MRF_AFTER_HDBSCAN = True
+USE_CLUSTERING_NET = True
+
 
 def downsample(image, factor):
     image = skimage.measure.block_reduce(image, (factor, factor), np.max)  # reduce resolution for performance
