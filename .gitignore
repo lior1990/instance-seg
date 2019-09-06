@@ -14,3 +14,4 @@ project/.idea/*
 *.sv
 project/code/outputs/statistics.txt
 *.txt
+*~*

@@ -4,7 +4,8 @@ import config
 
 def getOptimizer(model):
     fe_opt = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=config.trainParams.maxLR,
-                             momentum=config.trainParams.momentum, nesterov=config.trainParams.useNesterov)
+                             momentum=config.trainParams.momentum, nesterov=config.trainParams.useNesterov,
+                             weight_decay=config.trainParams.weightDecay)
     return fe_opt
 
 
@@ -34,6 +35,5 @@ def getStepOptimizerScheduler(optimizer, lastEpochTrained):
 def getOptimizerScheduler(optimizer, lastEpochTrained):
     if lastEpochTrained == 0:
         lastEpochTrained = -1
-    # return getStepOptimizerScheduler(optimizer, lastEpochTrained)
-    return getMultiStepOptimizerScheduler(optimizer, lastEpochTrained)
-    # return getCyclicOptimizerScheduler(optimizer, lastEpochTrained)
+    return getMultiStepOptimizerScheduler(optimizer, lastEpochTrained)  # for cluster net
+    # return getCyclicOptimizerScheduler(optimizer, lastEpochTrained)  # for embedding net

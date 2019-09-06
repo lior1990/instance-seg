@@ -4,6 +4,7 @@ from config import getFeatureExtractionModel, getClusterModel, config_logger, fl
 from matplotlib.colors import ListedColormap
 from matplotlib.pyplot import imsave
 from os.path import join
+from os import makedirs
 import matplotlib
 import torch
 import numpy as np
@@ -20,6 +21,10 @@ LABELS_FORMAT = 'png'
 
 MIN_CLUSTER_SIZE = 10
 RESCALE_FACTOR = 2
+
+useMrfAfterHdbScan = False  # True
+useClusteringNet = False  # True
+useMrfAfterClusteringNet = False  # True
 
 
 def downsample(image, factor):
@@ -218,15 +223,21 @@ def convertIndividualSegmentsToSingleImage(segments):
     return converted
 
 
-def run(feExpName, clExpName, feEpoch, clEpoch, dataPath, labelsPath, idsFilePath, outputPath):
+def run(feExpName, feSubName, clExpName, clSubName, feEpoch, clEpoch, dataPath, labelsPath, idsFilePath, outputPath):
+    makedirs(outputPath, exist_ok=True)
     dataset = CostumeDataset(idsFilePath, dataPath, labelsPath)
     dataLoader = DataLoader(dataset, batch_size=1, shuffle=False)
-    loggerExpName = 'evaluation_' + feExpName + '_' + clExpName
+    if useClusteringNet:
+        loggerExpName = 'evaluation_' + feExpName + '_' + feSubName + '_' + clExpName + '_' + clSubName
+    else:
+        loggerExpName = 'evaluation_' + feExpName + '_' + feSubName
     logger = config_logger(loggerExpName)
-    featureExtractorModel = getFeatureExtractionModel(feExpName, logger, currentEpoch=feEpoch)[0]
+    featureExtractorModel = \
+        getFeatureExtractionModel(feExpName, logger, sub_experiment_name=feSubName, currentEpoch=feEpoch)[0]
     featureExtractorModel.eval()
-    clusteringModel = getClusterModel(clExpName, logger, currentEpoch=clEpoch)[0]
-    clusteringModel.eval()
+    if useClusteringNet:
+        clusteringModel = getClusterModel(clExpName, logger, sub_experiment_name=clSubName, currentEpoch=clEpoch)[0]
+        clusteringModel.eval()
     hdbEval = Evaluator()
     hdbEvalResults = []
     hdbMrfEval = Evaluator()
@@ -253,77 +264,102 @@ def run(feExpName, clExpName, feEpoch, clEpoch, dataPath, labelsPath, idsFilePat
         saveLabel(outputPath, 'hdbscan', i, clustered)
         hdbEvalResults.append(hdbEval.evaluate(clustered, labels))
 
-        clusteredAndMRF = upsample(denoise_colored_image(downsample(clustered, RESCALE_FACTOR)), RESCALE_FACTOR)
-        saveLabel(outputPath, 'hdbscan_mrf', i, clusteredAndMRF)
-        hdbMrfEvalResults.append(hdbMrfEval.evaluate(clusteredAndMRF, labels))
+        if useMrfAfterHdbScan:
+            clusteredAndMRF = upsample(denoise_colored_image(downsample(clustered, RESCALE_FACTOR)), RESCALE_FACTOR)
+            saveLabel(outputPath, 'hdbscan_mrf', i, clusteredAndMRF)
+            hdbMrfEvalResults.append(hdbMrfEval.evaluate(clusteredAndMRF, labels))
 
-        clusteredInput = convertToClusterNetInput(features, clustered)
-        clusteredMrfInput = convertToClusterNetInput(features, clusteredAndMRF)
+        if useClusteringNet:
+            clusteredInput = convertToClusterNetInput(features, clustered)
+            if clusteredInput.shape[0] > 0:
+                noMrfOnInput = clusteringModel(clusteredInput, None)[0]
+            else:
+                noMrfOnInput = np.zeros((1, 1, clusteredInput.shape[2], clusteredInput.shape[3]))
+            hdbClusterNetOut = convertIndividualSegmentsToSingleImage(noMrfOnInput)
+            saveLabel(outputPath, 'hdbscan_clusternet', i, hdbClusterNetOut)
+            hdbClusterNetEvalResults.append(hdbClusterNetEval.evaluate(hdbClusterNetOut, labels))
 
-        if clusteredInput.shape[0] > 0:
-            noMrfOnInput = clusteringModel(clusteredInput, None)[0]
-        else:
-            noMrfOnInput = np.zeros((1, 1, clusteredInput.shape[2], clusteredInput.shape[3]))
+        if useMrfAfterHdbScan and useClusteringNet:
+            clusteredMrfInput = convertToClusterNetInput(features, clusteredAndMRF)
+            if clusteredMrfInput.shape[0] > 0:
+                mrfOnInput = clusteringModel(clusteredMrfInput, None)[0]
+            else:
+                mrfOnInput = np.zeros((1, 1, clusteredMrfInput.shape[2], clusteredMrfInput.shape[3]))
+            hdbMrfClusterNetOut = convertIndividualSegmentsToSingleImage(mrfOnInput)
+            saveLabel(outputPath, 'hdbscan_mrf_clusternet', i, hdbMrfClusterNetOut)
+            hdbMrfClusterNetEvalResults.append(hdbMrfClusterNetEval.evaluate(hdbMrfClusterNetOut, labels))
 
-        if clusteredMrfInput.shape[0] > 0:
-            mrfOnInput = clusteringModel(clusteredMrfInput, None)[0]
-        else:
-            mrfOnInput = np.zeros((1, 1, clusteredMrfInput.shape[2], clusteredMrfInput.shape[3]))
+        if useClusteringNet and useMrfAfterClusteringNet:
+            hdbClusterNetMrfOut = upsample(denoise_colored_image(downsample(hdbClusterNetOut, RESCALE_FACTOR)),
+                                           RESCALE_FACTOR)
+            saveLabel(outputPath, 'hdbscan_clusternet_mrf', i, hdbClusterNetMrfOut)
+            hdbClusterNetMrfEvalResults.append(hdbClusterNetMrfEval.evaluate(hdbClusterNetMrfOut, labels))
 
-        hdbClusterNetOut = convertIndividualSegmentsToSingleImage(noMrfOnInput)
-        saveLabel(outputPath, 'hdbscan_clusternet', i, hdbClusterNetOut)
-        hdbClusterNetEvalResults.append(hdbClusterNetEval.evaluate(hdbClusterNetOut, labels))
-
-        hdbClusterNetMrfOut = upsample(denoise_colored_image(downsample(hdbClusterNetOut, RESCALE_FACTOR)),
-                                       RESCALE_FACTOR)
-        saveLabel(outputPath, 'hdbscan_clusternet_mrf', i, hdbClusterNetMrfOut)
-        hdbClusterNetMrfEvalResults.append(hdbClusterNetMrfEval.evaluate(hdbClusterNetMrfOut, labels))
-
-        hdbMrfClusterNetOut = convertIndividualSegmentsToSingleImage(mrfOnInput)
-        saveLabel(outputPath, 'hdbscan_mrf_clusternet', i, hdbMrfClusterNetOut)
-        hdbMrfClusterNetEvalResults.append(hdbMrfClusterNetEval.evaluate(hdbMrfClusterNetOut, labels))
-
-        hdbMrfClusterNetMrfOut = upsample(denoise_colored_image(downsample(hdbMrfClusterNetOut, RESCALE_FACTOR)),
-                                          RESCALE_FACTOR)
-        saveLabel(outputPath, 'hdbscan_mrf_clusternet_mrf', i, hdbMrfClusterNetMrfOut)
-        hdbMrfClusterNetMrfEvalResults.append(hdbMrfClusterNetMrfEval.evaluate(hdbMrfClusterNetMrfOut, labels))
+        if useMrfAfterHdbScan and useClusteringNet and useMrfAfterClusteringNet:
+            hdbMrfClusterNetMrfOut = upsample(denoise_colored_image(downsample(hdbMrfClusterNetOut, RESCALE_FACTOR)),
+                                              RESCALE_FACTOR)
+            saveLabel(outputPath, 'hdbscan_mrf_clusternet_mrf', i, hdbMrfClusterNetMrfOut)
+            hdbMrfClusterNetMrfEvalResults.append(hdbMrfClusterNetMrfEval.evaluate(hdbMrfClusterNetMrfOut, labels))
 
     hdbEvalResults.append(hdbEval.get_average_results())
-    hdbMrfEvalResults.append(hdbMrfEval.get_average_results())
-    hdbClusterNetEvalResults.append(hdbClusterNetEval.get_average_results())
-    hdbClusterNetMrfEvalResults.append(hdbClusterNetMrfEval.get_average_results())
-    hdbMrfClusterNetEvalResults.append(hdbMrfClusterNetEval.get_average_results())
-    hdbMrfClusterNetMrfEvalResults.append(hdbMrfClusterNetMrfEval.get_average_results())
+
+    if useMrfAfterHdbScan:
+        hdbMrfEvalResults.append(hdbMrfEval.get_average_results())
+
+    if useClusteringNet:
+        hdbClusterNetEvalResults.append(hdbClusterNetEval.get_average_results())
+
+    if useMrfAfterHdbScan and useClusteringNet:
+        hdbMrfClusterNetEvalResults.append(hdbMrfClusterNetEval.get_average_results())
+
+    if useClusteringNet and useMrfAfterClusteringNet:
+        hdbClusterNetMrfEvalResults.append(hdbClusterNetMrfEval.get_average_results())
+
+    if useMrfAfterHdbScan and useClusteringNet and useMrfAfterClusteringNet:
+        hdbMrfClusterNetMrfEvalResults.append(hdbMrfClusterNetMrfEval.get_average_results())
 
     with open(join(outputPath, 'statistics.txt'), mode='w') as file:
         for i in range(len(hdbEvalResults) - 1):
             file.write('hdbscan only image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(hdbEvalResults[i]))
             file.write('\n')
-            file.write('hdbscan and MRF image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(hdbMrfEvalResults[i]))
-            file.write('\n')
-            file.write('hdbscan and ClusterNet image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(
-                hdbClusterNetEvalResults[i]))
-            file.write('\n')
-            file.write('hdbscan and ClusterNet and MRF image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(
-                hdbClusterNetMrfEvalResults[i]))
-            file.write('\n')
-            file.write('hdbscan and MRF and ClusterNet image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(
-                hdbMrfClusterNetEvalResults[i]))
-            file.write('\n')
-            file.write('hdbscan and MRF and ClusterNet and MRF image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(
-                hdbMrfClusterNetMrfEvalResults[i]))
-            file.write('\n')
+            if useMrfAfterHdbScan:
+                file.write(
+                    'hdbscan and MRF image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(hdbMrfEvalResults[i]))
+                file.write('\n')
+            if useClusteringNet:
+                file.write('hdbscan and ClusterNet image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(
+                    hdbClusterNetEvalResults[i]))
+                file.write('\n')
+            if useMrfAfterHdbScan and useClusteringNet:
+                file.write('hdbscan and MRF and ClusterNet image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(
+                    hdbMrfClusterNetEvalResults[i]))
+                file.write('\n')
+            if useClusteringNet and useMrfAfterClusteringNet:
+                file.write('hdbscan and ClusterNet and MRF image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(
+                    hdbClusterNetMrfEvalResults[i]))
+                file.write('\n')
+            if useMrfAfterHdbScan and useClusteringNet and useMrfAfterClusteringNet:
+                file.write(
+                    'hdbscan and MRF and ClusterNet and MRF image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(
+                        hdbMrfClusterNetMrfEvalResults[i]))
+                file.write('\n')
             file.write('\n')
         lastLoc = len(hdbEvalResults) - 1
+
         file.write('hdbscan only mean: ' + str(hdbEvalResults[lastLoc]))
         file.write('\n')
-        file.write('hdbscan and MRF mean: ' + str(hdbMrfEvalResults[lastLoc]))
-        file.write('\n')
-        file.write('hdbscan and ClusterNet mean : ' + str(hdbClusterNetEvalResults[lastLoc]))
-        file.write('\n')
-        file.write('hdbscan and ClusterNet and MRF mean: ' + str(hdbClusterNetMrfEvalResults[lastLoc]))
-        file.write('\n')
-        file.write('hdbscan and MRF and ClusterNet mean: ' + str(hdbMrfClusterNetEvalResults[lastLoc]))
-        file.write('\n')
-        file.write('hdbscan and MRF and ClusterNet and MRF mean: ' + str(hdbMrfClusterNetMrfEvalResults[lastLoc]))
-        file.write('\n')
+        if useMrfAfterHdbScan:
+            file.write('hdbscan and MRF mean: ' + str(hdbMrfEvalResults[lastLoc]))
+            file.write('\n')
+        if useClusteringNet:
+            file.write('hdbscan and ClusterNet mean : ' + str(hdbClusterNetEvalResults[lastLoc]))
+            file.write('\n')
+        if useMrfAfterHdbScan and useClusteringNet:
+            file.write('hdbscan and MRF and ClusterNet mean: ' + str(hdbMrfClusterNetEvalResults[lastLoc]))
+            file.write('\n')
+        if useClusteringNet and useMrfAfterClusteringNet:
+            file.write('hdbscan and ClusterNet and MRF mean: ' + str(hdbClusterNetMrfEvalResults[lastLoc]))
+            file.write('\n')
+        if useMrfAfterHdbScan and useClusteringNet and useMrfAfterClusteringNet:
+            file.write('hdbscan and MRF and ClusterNet and MRF mean: ' + str(hdbMrfClusterNetMrfEvalResults[lastLoc]))
+            file.write('\n')
