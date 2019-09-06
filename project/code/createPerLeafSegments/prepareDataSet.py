@@ -92,11 +92,25 @@ def main():
     imagesFolderPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'images', '')
     labelsFolderPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'labels', '')
     imagesIdsFilePath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'images_ids.txt')
-    dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances_original_paper', '')
-    labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels_original_paper', '')
-    outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids_original_paper.txt'))
-    experiment_name = 'trained_model'
-    epochName = '1001'
+
+    dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances_no_edges_no_weighted_mean', '')
+    # dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances_no_edges_yes_weighted_mean', '')
+    # dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances_yes_edges_no_weighted_mean', '')
+    # dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances_yes_edges_yes_weighted_mean', '')
+    labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels_no_edges_no_weighted_mean', '')
+    # labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels_no_edges_yes_weighted_mean', '')
+    # labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels_yes_edges_no_weighted_mean', '')
+    # labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels_yes_edges_yes_weighted_mean', '')
+    outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids_no_edges_no_weighted_mean.txt'))
+    # outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids_no_edges_yes_weighted_mean.txt'))
+    # outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids_yes_edges_no_weighted_mean.txt'))
+    # outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids_yes_edges_yes_weighted_mean.txt'))
+
+    experiment_name = 'best_no_edges_no_weighted_mean'
+    # experiment_name = 'best_no_edges_yes_weighted_mean'
+    # experiment_name = 'best_yes_edges_no_weighted_mean'
+    # experiment_name = 'best_yes_edges_yes_weighted_mean'
+    epochName = '501'
     dataSetParams = DataSetParams(data_folder_path=imagesFolderPath, labels_folder_path=labelsFolderPath,
                                   ids_path=imagesIdsFilePath)
     counter = 0

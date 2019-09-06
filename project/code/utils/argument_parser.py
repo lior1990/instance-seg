@@ -8,19 +8,22 @@ def train_argument_parser():
 
     # default_train_data_path = os.path.join('..', '..', 'COCO', 'train2017', '')
     # default_train_data_path = os.path.join('..', '..', 'cvppp', 'all_plants', 'train1', 'images', '')
-    # default_train_data_path = os.path.join('..', '..', 'cvppp', 'formattedA1Only', 'train1', 'images', '')
-    default_train_data_path = os.path.join('..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances_original_paper', '')
+    default_train_data_path = os.path.join('..', '..', 'cvppp', 'formattedA1Only', 'train1', 'images', '')
+    # default_train_data_path = os.path.join('..', '..', 'cvppp', 'formattedA1Only', 'train2',
+    #                                        'mask_distances_original_paper', '')
 
     # default_train_labels_path = os.path.join('..', '..', 'COCO', 'train2017labels', 'instance_labels', '')
     # default_train_labels_path = os.path.join('..', '..', 'cvppp', 'all_plants', 'train1', 'labels', '')
-    # default_train_labels_path = os.path.join('..', '..', 'cvppp', 'formattedA1Only', 'train1', 'labels', '')
-    default_train_labels_path = os.path.join('..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels_original_paper', '')
+    default_train_labels_path = os.path.join('..', '..', 'cvppp', 'formattedA1Only', 'train1', 'labels', '')
+    # default_train_labels_path = os.path.join('..', '..', 'cvppp', 'formattedA1Only', 'train2',
+    #                                          'mask_labels_original_paper', '')
 
     # default_train_ids_file = os.path.join('..', '..', 'COCO', 'train2017labels', 'images_ids.txt')
     # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'all_plants', 'train1', 'images_ids.txt')
-    # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'mask_ids.txt')
+    default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formattedA1Only', 'train1', 'images_ids.txt')
     # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'all_plants', 'train2', 'mask_ids.txt')
-    default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids_original_paper.txt')
+    # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formattedA1Only', 'train2',
+    #                                       'mask_ids_original_paper.txt')
 
     # default_train_ids_file = os.path.join('..', '..', 'COCO', 'overfit.txt')
     # default_train_ids_file = os.path.join('..', '..', 'cvppp', 'formatted', 'train2', 'overfit.txt')
@@ -102,7 +105,9 @@ def evaluation_argument_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--fe_name', help='Feature extractor experiment name', required=False,
                         default=defaultFeExperimentName)
+    parser.add_argument('--fe_sub_name', help='Feature extractor sub-experiment name', required=False, default='')
     parser.add_argument('--cl_name', help='Clustering experiment name', required=False, default=defaultClExperimentName)
+    parser.add_argument('--cl_sub_name', help='Clustering sub-experiment name', required=False, default='')
     parser.add_argument('--fe_epoch_num', help='Feature extractor epoch number', required=False, default='latest')
     parser.add_argument('--cl_epoch_num', help='Clustering epoch number', required=False, default='latest')
     parser.add_argument('--data_folder_path', required=False, default=defaultDataPath)
@@ -113,7 +118,9 @@ def evaluation_argument_parser():
 
     args = parser.parse_args()
     fe_experiment = args.fe_name
+    fe_sub_experiment = args.fe_sub_name
     cl_experiment = args.cl_name
+    cl_sub_experiment = args.cl_sub_name
     feEpoch = args.fe_epoch_num
     clEpoch = args.cl_epoch_num
     dataPath = args.data_folder_path
@@ -122,4 +129,4 @@ def evaluation_argument_parser():
     outputPath = args.output_path
     GPUs = args.GPUs
 
-    return fe_experiment, cl_experiment, feEpoch, clEpoch, dataPath, labelsPath, idsPath, outputPath, GPUs
+    return fe_experiment, fe_sub_experiment, cl_experiment, cl_sub_experiment, feEpoch, clEpoch, dataPath, labelsPath, idsPath, outputPath, GPUs
