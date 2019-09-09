@@ -15,6 +15,7 @@ def main():
         # should be a number or a list of comma separated numbers
         os.environ["CUDA_VISIBLE_DEVICES"] = GPUs
 
+
     print('FE experiment:', fe_experiment)
     print('FE sub experiment:', fe_sub_experiment)
     print('CL experiment:', cl_experiment)

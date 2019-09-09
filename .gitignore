@@ -15,3 +15,4 @@ project/.idea/*
 project/code/outputs/statistics.txt
 *.txt
 *~*
+*.h5
