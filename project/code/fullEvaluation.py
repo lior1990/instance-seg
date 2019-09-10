@@ -19,9 +19,10 @@ FILE_NAME_ID_LENGTH = 4
 IMAGE_FORMAT = 'jpg'
 LABELS_FORMAT = 'png'
 
-MIN_CLUSTER_SIZE = [10,20,30,40,45,55]
+MIN_CLUSTER_SIZE = [50,30,40,45,55,35]
 MERGE_SMALLER_FIRST = [True]
 RESCALE_FACTOR = 2
+MEAN_CALC_ITERS = 1
 
 useMrfAfterHdbScan = True
 useClusteringNet = True
@@ -39,15 +40,24 @@ def upsample(image, factor):
     return image
 
 
-def getMeanTensor(features, labels, focusLabel):
+def getMeanTensor(features, labels, focusLabel, weights):
     labels = labels.flatten()
+    weights = weights.flatten()
     features = features.permute(1, 2, 0).contiguous()
     shape = features.size()
     features = features.view(shape[0] * shape[1], shape[2])
     locations = torch.LongTensor(np.where(labels == focusLabel)[0]).type(long_type)
+    weights = torch.from_numpy(weights)
+    weights = torch.index_select(weights, dim=0, index=locations).type(float_type)
+    weights = weights.view(-1,1)
+    totWeight = weights.sum()
     # all vectors of this instance
+
     vectors = torch.index_select(features, dim=0, index=locations).type(float_type)
-    meanTensor = vectors.mean(dim=0)
+
+    # meanTensor = vectors.mean(dim=0)
+    meanTensor = (vectors * weights).sum(dim=0)
+    meanTensor = meanTensor / totWeight
     return meanTensor
 
 
@@ -186,8 +196,10 @@ def convertToClusterNetInput(features, labels, mergeSmallerFirst):
     converted = torch.zeros((N, 1, h, w)).type(float_type)
     loc = 0
     for color in colors:
-        meanTensor = getMeanTensor(features, labels, color)
-        distanceMask = getDistancesMask(features, meanTensor)
+        distanceMask = torch.ones(labels.shape).type(float_type)
+        for i in range(MEAN_CALC_ITERS):
+            meanTensor = getMeanTensor(features, labels, color, distanceMask.cpu().numpy())
+            distanceMask = getDistancesMask(features, meanTensor)
         converted[loc, 0] = distanceMask
         loc += 1
     return converted
@@ -221,7 +233,7 @@ def convertIndividualSegmentsToSingleImage(segments, mergeSmallerFirst):
             converted[updateLocations] = currLabel  # in case of a collision the last segment wins
             currLabel += 1
         else:
-            converted[updateLocations] = 0 
+            converted[updateLocations] = 0
 
     return converted
 
@@ -230,7 +242,7 @@ def run(feExpName, feSubName, clExpName, clSubName, feEpoch, clEpoch, dataPath, 
     for clusterSize in MIN_CLUSTER_SIZE:
         for mergeSmallerFirst in MERGE_SMALLER_FIRST:
             outLoc = join(outputPath,
-                          'min_cluster_' + str(clusterSize) + '_merge_smaller_first_' + str(mergeSmallerFirst))
+                          'with_background_min_cluster_' + str(clusterSize) + '_merge_smaller_first_' + str(mergeSmallerFirst)+'_mean_calc_iters_'+str(MEAN_CALC_ITERS))
             runSingleClusterSize(feExpName, feSubName, clExpName, clSubName, feEpoch, clEpoch, dataPath, labelsPath,
                                  idsFilePath, outLoc, clusterSize, mergeSmallerFirst)
 
