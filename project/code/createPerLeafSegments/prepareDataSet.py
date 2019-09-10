@@ -93,20 +93,23 @@ def main():
     labelsFolderPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'labels', '')
     imagesIdsFilePath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'images_ids.txt')
 
-    dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances_no_edges_no_weighted_mean', '')
+    dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2',
+                               'mask_distances_no_edges_no_weighted_mean_second_best', '')
     # dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances_no_edges_yes_weighted_mean', '')
     # dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances_yes_edges_no_weighted_mean', '')
     # dataOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_distances_yes_edges_yes_weighted_mean', '')
-    labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels_no_edges_no_weighted_mean', '')
+    labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2',
+                                 'mask_labels_no_edges_no_weighted_mean_second_best', '')
     # labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels_no_edges_yes_weighted_mean', '')
     # labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels_yes_edges_no_weighted_mean', '')
     # labelsOutPath = os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_labels_yes_edges_yes_weighted_mean', '')
-    outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids_no_edges_no_weighted_mean.txt'))
+    outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2',
+                                               'mask_ids_no_edges_no_weighted_mean_second_best.txt'))
     # outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids_no_edges_yes_weighted_mean.txt'))
     # outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids_yes_edges_no_weighted_mean.txt'))
     # outIdsFilePath = os.path.join(os.path.join('..', '..', '..', 'cvppp', 'formattedA1Only', 'train2', 'mask_ids_yes_edges_yes_weighted_mean.txt'))
 
-    experiment_name = 'best_no_edges_no_weighted_mean'
+    experiment_name = 'second_best_no_edges_no_weighted_mean'
     # experiment_name = 'best_no_edges_yes_weighted_mean'
     # experiment_name = 'best_yes_edges_no_weighted_mean'
     # experiment_name = 'best_yes_edges_yes_weighted_mean'

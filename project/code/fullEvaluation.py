@@ -19,12 +19,14 @@ FILE_NAME_ID_LENGTH = 4
 IMAGE_FORMAT = 'jpg'
 LABELS_FORMAT = 'png'
 
-MIN_CLUSTER_SIZE = 10
+MIN_CLUSTER_SIZE = [50,30,40,45,55,35]
+MERGE_SMALLER_FIRST = [True]
 RESCALE_FACTOR = 2
+MEAN_CALC_ITERS = 1
 
-useMrfAfterHdbScan = False  # True
-useClusteringNet = False  # True
-useMrfAfterClusteringNet = False  # True
+useMrfAfterHdbScan = True
+useClusteringNet = True
+useMrfAfterClusteringNet = True
 
 
 def downsample(image, factor):
@@ -38,15 +40,24 @@ def upsample(image, factor):
     return image
 
 
-def getMeanTensor(features, labels, focusLabel):
+def getMeanTensor(features, labels, focusLabel, weights):
     labels = labels.flatten()
+    weights = weights.flatten()
     features = features.permute(1, 2, 0).contiguous()
     shape = features.size()
     features = features.view(shape[0] * shape[1], shape[2])
     locations = torch.LongTensor(np.where(labels == focusLabel)[0]).type(long_type)
+    weights = torch.from_numpy(weights)
+    weights = torch.index_select(weights, dim=0, index=locations).type(float_type)
+    weights = weights.view(-1,1)
+    totWeight = weights.sum()
     # all vectors of this instance
+
     vectors = torch.index_select(features, dim=0, index=locations).type(float_type)
-    meanTensor = vectors.mean(dim=0)
+
+    # meanTensor = vectors.mean(dim=0)
+    meanTensor = (vectors * weights).sum(dim=0)
+    meanTensor = meanTensor / totWeight
     return meanTensor
 
 
@@ -134,7 +145,7 @@ def saveLabel(outputDir, name, id, data):
            format=LABELS_FORMAT)
 
 
-def getClusters(features):
+def getClusters(features, minimumClusterSize):
     '''
     cluster the features using HDBScan
     :param features: ndarray of shape (c,h,w) or (1,c,h,w)
@@ -147,12 +158,19 @@ def getClusters(features):
     w = features.shape[1]
     c = features.shape[2]
     features = np.reshape(features, [h * w, c])
-    predicted = cluster_features(features, MIN_CLUSTER_SIZE)
+    predicted = cluster_features(features, minimumClusterSize)
     predicted = np.reshape(predicted, [h, w])
-    return predicted
+    colors, counts = np.unique(predicted, return_counts=True)
+    newColors = list(range(len(colors)))
+    countSortedInd = np.argsort(-counts)  # get sorted indices from big to small
+    colors = colors[countSortedInd]
+    newPredicted = np.zeros(predicted.shape)
+    for i in range(len(colors)):
+        newPredicted[np.where(predicted == colors[i])] = newColors[i]
+    return newPredicted
 
 
-def convertToClusterNetInput(features, labels):
+def convertToClusterNetInput(features, labels, mergeSmallerFirst):
     '''
     convert the features outputted from the feature extractor to inputs for the ClusterNet
     :param features: torch.Tensor of shape (1,c,h,w) or (c,h,w)
@@ -167,26 +185,27 @@ def convertToClusterNetInput(features, labels):
     h = labels.shape[0]
     w = labels.shape[1]
     colors, counts = np.unique(labels, return_counts=True)
-    countSortedInd = np.argsort(-counts)  # get sorted indices from big to small
+    if mergeSmallerFirst:
+        countSortedInd = np.argsort(counts)  # get sorted indices from small to big
+    else:
+        countSortedInd = np.argsort(-counts)  # get sorted indices from big to small
+
     colors = colors[countSortedInd]
     counts = counts[countSortedInd]
-    backgroundColor = colors[np.argmax(counts)]
-    assert (backgroundColor == colors[0])
-
-    N = len(colors) - 1  # without background
+    N = len(colors)  # without background
     converted = torch.zeros((N, 1, h, w)).type(float_type)
     loc = 0
     for color in colors:
-        if color == backgroundColor:
-            continue
-        meanTensor = getMeanTensor(features, labels, color)
-        distanceMask = getDistancesMask(features, meanTensor)
+        distanceMask = torch.ones(labels.shape).type(float_type)
+        for i in range(MEAN_CALC_ITERS):
+            meanTensor = getMeanTensor(features, labels, color, distanceMask.cpu().numpy())
+            distanceMask = getDistancesMask(features, meanTensor)
         converted[loc, 0] = distanceMask
         loc += 1
     return converted
 
 
-def convertIndividualSegmentsToSingleImage(segments):
+def convertIndividualSegmentsToSingleImage(segments, mergeSmallerFirst):
     '''
     converts the outputs of the ClusterNet to single labeled image
     :param segments: ndarray of shape (N,1,h,w) each element is 0 or 1 for N non-background instances
@@ -196,34 +215,40 @@ def convertIndividualSegmentsToSingleImage(segments):
     h = segments.shape[2]
     w = segments.shape[3]
 
+    segmentSize = np.array([len(np.where(x > 0.5)[0]) for x in segments])
+    if mergeSmallerFirst:
+        segmentIdxBySize = np.argsort(segmentSize)  # sort from smallest segments to largest
+    else:
+        segmentIdxBySize = np.argsort(-segmentSize)  # sort from largest segments to smallest
+
     converted = np.zeros((h, w))
     currLabel = 1
 
-    for i in range(N):
+    bgSegmentIdx = np.argmax(segmentSize)
+
+    for i in segmentIdxBySize:
         currSegment = segments[i, 0]
         updateLocations = np.where(currSegment > 0.5)
-        converted[updateLocations] = currLabel  # in case of a collision the last segment wins
-        currLabel += 1
-
-        # uncomment the following instead of the previous three lines in order to create two segments in the collision
-
-        # newUpdateLocations = np.where((currSegment > 0.5) & (converted == 0))  # all unlabeled locations in this segment
-        # labelToAvoid = 0
-        # if newUpdateLocations[0].size > 0:
-        #     converted[newUpdateLocations] = currLabel
-        #     labelToAvoid = currLabel
-        #     currLabel += 1
-        # reUpdateLocations = np.where(
-        #     (currSegment > 0.5) & (converted != labelToAvoid))  # all previously labeled locations in this segement
-        #
-        # if reUpdateLocations[0].size > 0:
-        #     converted[reUpdateLocations] = currLabel
-        #     currLabel += 1
+        if i != bgSegmentIdx:
+            converted[updateLocations] = currLabel  # in case of a collision the last segment wins
+            currLabel += 1
+        else:
+            converted[updateLocations] = 0
 
     return converted
 
 
 def run(feExpName, feSubName, clExpName, clSubName, feEpoch, clEpoch, dataPath, labelsPath, idsFilePath, outputPath):
+    for clusterSize in MIN_CLUSTER_SIZE:
+        for mergeSmallerFirst in MERGE_SMALLER_FIRST:
+            outLoc = join(outputPath,
+                          'with_background_min_cluster_' + str(clusterSize) + '_merge_smaller_first_' + str(mergeSmallerFirst)+'_mean_calc_iters_'+str(MEAN_CALC_ITERS))
+            runSingleClusterSize(feExpName, feSubName, clExpName, clSubName, feEpoch, clEpoch, dataPath, labelsPath,
+                                 idsFilePath, outLoc, clusterSize, mergeSmallerFirst)
+
+
+def runSingleClusterSize(feExpName, feSubName, clExpName, clSubName, feEpoch, clEpoch, dataPath, labelsPath,
+                         idsFilePath, outputPath, clusterMinSize, mergeSmallerFirst):
     makedirs(outputPath, exist_ok=True)
     dataset = CostumeDataset(idsFilePath, dataPath, labelsPath)
     dataLoader = DataLoader(dataset, batch_size=1, shuffle=False)
@@ -244,6 +269,8 @@ def run(feExpName, feSubName, clExpName, clSubName, feEpoch, clEpoch, dataPath, 
     hdbMrfEvalResults = []
     hdbClusterNetEval = Evaluator()
     hdbClusterNetEvalResults = []
+    gtClusterNetEval = Evaluator()
+    gtClusterNetEvalResults = []
     hdbClusterNetMrfEval = Evaluator()
     hdbClusterNetMrfEvalResults = []
     hdbMrfClusterNetEval = Evaluator()
@@ -260,7 +287,7 @@ def run(feExpName, feSubName, clExpName, clSubName, feEpoch, clEpoch, dataPath, 
 
         features = featureExtractorModel(inputs, None, None)[0]
 
-        clustered = getClusters(features.cpu().numpy())
+        clustered = getClusters(features.cpu().numpy(), clusterMinSize)
         saveLabel(outputPath, 'hdbscan', i, clustered)
         hdbEvalResults.append(hdbEval.evaluate(clustered, labels))
 
@@ -270,22 +297,31 @@ def run(feExpName, feSubName, clExpName, clSubName, feEpoch, clEpoch, dataPath, 
             hdbMrfEvalResults.append(hdbMrfEval.evaluate(clusteredAndMRF, labels))
 
         if useClusteringNet:
-            clusteredInput = convertToClusterNetInput(features, clustered)
+            clusteredInput = convertToClusterNetInput(features, clustered, mergeSmallerFirst)
             if clusteredInput.shape[0] > 0:
                 noMrfOnInput = clusteringModel(clusteredInput, None)[0]
             else:
                 noMrfOnInput = np.zeros((1, 1, clusteredInput.shape[2], clusteredInput.shape[3]))
-            hdbClusterNetOut = convertIndividualSegmentsToSingleImage(noMrfOnInput)
+            hdbClusterNetOut = convertIndividualSegmentsToSingleImage(noMrfOnInput, mergeSmallerFirst)
             saveLabel(outputPath, 'hdbscan_clusternet', i, hdbClusterNetOut)
             hdbClusterNetEvalResults.append(hdbClusterNetEval.evaluate(hdbClusterNetOut, labels))
 
+            gtInput = convertToClusterNetInput(features, labels, mergeSmallerFirst)
+            if gtInput.shape[0] > 0:
+                clusteredGt = clusteringModel(gtInput, None)[0]
+            else:
+                clusteredGt = np.zeros((1, 1, gtInput.shape[2], gtInput.shape[3]))
+            gtClusterNetOut = convertIndividualSegmentsToSingleImage(clusteredGt, mergeSmallerFirst)
+            saveLabel(outputPath, 'calc_mean_by_GT_clusternet', i, gtClusterNetOut)
+            gtClusterNetEvalResults.append(gtClusterNetEval.evaluate(gtClusterNetOut, labels))
+
         if useMrfAfterHdbScan and useClusteringNet:
-            clusteredMrfInput = convertToClusterNetInput(features, clusteredAndMRF)
+            clusteredMrfInput = convertToClusterNetInput(features, clusteredAndMRF, mergeSmallerFirst)
             if clusteredMrfInput.shape[0] > 0:
                 mrfOnInput = clusteringModel(clusteredMrfInput, None)[0]
             else:
                 mrfOnInput = np.zeros((1, 1, clusteredMrfInput.shape[2], clusteredMrfInput.shape[3]))
-            hdbMrfClusterNetOut = convertIndividualSegmentsToSingleImage(mrfOnInput)
+            hdbMrfClusterNetOut = convertIndividualSegmentsToSingleImage(mrfOnInput, mergeSmallerFirst)
             saveLabel(outputPath, 'hdbscan_mrf_clusternet', i, hdbMrfClusterNetOut)
             hdbMrfClusterNetEvalResults.append(hdbMrfClusterNetEval.evaluate(hdbMrfClusterNetOut, labels))
 
@@ -308,6 +344,7 @@ def run(feExpName, feSubName, clExpName, clSubName, feEpoch, clEpoch, dataPath, 
 
     if useClusteringNet:
         hdbClusterNetEvalResults.append(hdbClusterNetEval.get_average_results())
+        gtClusterNetEvalResults.append(gtClusterNetEval.get_average_results())
 
     if useMrfAfterHdbScan and useClusteringNet:
         hdbMrfClusterNetEvalResults.append(hdbMrfClusterNetEval.get_average_results())
@@ -330,6 +367,10 @@ def run(feExpName, feSubName, clExpName, clSubName, feEpoch, clEpoch, dataPath, 
                 file.write('hdbscan and ClusterNet image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(
                     hdbClusterNetEvalResults[i]))
                 file.write('\n')
+                file.write(
+                    'ClusterNet with actual embedding mean image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(
+                        gtClusterNetEvalResults[i]))
+                file.write('\n')
             if useMrfAfterHdbScan and useClusteringNet:
                 file.write('hdbscan and MRF and ClusterNet image ' + str(i).zfill(FILE_NAME_ID_LENGTH) + ': ' + str(
                     hdbMrfClusterNetEvalResults[i]))
@@ -346,20 +387,24 @@ def run(feExpName, feSubName, clExpName, clSubName, feEpoch, clEpoch, dataPath, 
             file.write('\n')
         lastLoc = len(hdbEvalResults) - 1
 
-        file.write('hdbscan only mean: ' + str(hdbEvalResults[lastLoc]))
+        file.write('hdbscan only, average score: ' + str(hdbEvalResults[lastLoc]))
         file.write('\n')
         if useMrfAfterHdbScan:
-            file.write('hdbscan and MRF mean: ' + str(hdbMrfEvalResults[lastLoc]))
+            file.write('hdbscan and MRF, average score: ' + str(hdbMrfEvalResults[lastLoc]))
             file.write('\n')
         if useClusteringNet:
-            file.write('hdbscan and ClusterNet mean : ' + str(hdbClusterNetEvalResults[lastLoc]))
+            file.write('hdbscan and ClusterNet, average score: ' + str(hdbClusterNetEvalResults[lastLoc]))
+            file.write('\n')
+            file.write(
+                'ClusterNet using actual embedding mean, average score: ' + str(gtClusterNetEvalResults[lastLoc]))
             file.write('\n')
         if useMrfAfterHdbScan and useClusteringNet:
-            file.write('hdbscan and MRF and ClusterNet mean: ' + str(hdbMrfClusterNetEvalResults[lastLoc]))
+            file.write('hdbscan and MRF and ClusterNet, average score: ' + str(hdbMrfClusterNetEvalResults[lastLoc]))
             file.write('\n')
         if useClusteringNet and useMrfAfterClusteringNet:
-            file.write('hdbscan and ClusterNet and MRF mean: ' + str(hdbClusterNetMrfEvalResults[lastLoc]))
+            file.write('hdbscan and ClusterNet and MRF, average score: ' + str(hdbClusterNetMrfEvalResults[lastLoc]))
             file.write('\n')
         if useMrfAfterHdbScan and useClusteringNet and useMrfAfterClusteringNet:
-            file.write('hdbscan and MRF and ClusterNet and MRF mean: ' + str(hdbMrfClusterNetMrfEvalResults[lastLoc]))
+            file.write('hdbscan and MRF and ClusterNet and MRF, average score: ' + str(
+                hdbMrfClusterNetMrfEvalResults[lastLoc]))
             file.write('\n')

@@ -27,7 +27,7 @@ class TrainParams:
         self.optHalfCycle = 50
         self.max_epoch_num = 5001  # 5001 for clustering net 501 for embedding net
         self.saveModelIntervalEpochs = 50
-        self.weightDecay = 0.01  # 0.01 good for cluster net 0 good for embedding net
+        self.weightDecay = 0.001  # 0.001 good for cluster net 0 good for embedding net
 
 
 trainParams = TrainParams()

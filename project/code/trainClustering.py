@@ -26,7 +26,7 @@ def run(current_experiment, train_data_folder_path, train_labels_folder_path, tr
     set_random_seed()
     # Dataloader
     train_dataset = SingleClustersDataSet(train_ids_path, train_data_folder_path, train_labels_folder_path)
-    train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True, num_workers=8,
+    train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True, num_workers=2,
                                   worker_init_fn=worker_init_fn)
 
     logger = config_logger(current_experiment)

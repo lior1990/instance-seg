@@ -14,7 +14,6 @@ def _get_bg_color(colors, counts):
 
 
 def denoise_colored_image(img):
-
     colors, counts = np.unique(img, return_counts=True)
 
     print("There are %d colors in the given image of shape: %s" % (len(colors), str(img.shape)))
@@ -35,8 +34,14 @@ def denoise_colored_image(img):
                        np.where((denoised_image == 1) & (img != color),
                                 color,
                                 img))
-
-    return img
+    colors, counts = np.unique(img, return_counts=True)
+    newColors = list(range(len(colors)))
+    countSortedInd = np.argsort(-counts)  # get sorted indices from big to small
+    colors = colors[countSortedInd]
+    newImg = np.zeros(img.shape)
+    for i in range(len(colors)):
+        newImg[np.where(img == colors[i])] = newColors[i]
+    return newImg
 
 
 def main():
